@@ -7,18 +7,22 @@ from PyQt5.QtCore import Qt, QPoint, QPointF, QSize, QRect
 import sys
 import json
 import pandas as pd
+import argparse
+import os 
 
 class ImageInfoWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, args):
         super().__init__()
-        self.initUI()
+        # self.image_path = args.image_path
+        # self.json_path = args.json_path
+        self.initUI(args)
         
-    def initUI(self):
+    def initUI(self, args):
         # self.status = self.statusBar()
         # self.status.showMessage("狀態列")
 
         # Create a grid layout
-        self.grid_layout = GridLayout()
+        self.grid_layout = GridLayout(args)
 
         # Create a menubar using the Menubar class
         menubar = Menubar(self)
@@ -33,23 +37,23 @@ class ImageInfoWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
 class GridLayout(QGridLayout):
-    def __init__(self):
+    def __init__(self, args):
         super().__init__()
         self.setSpacing(10)
         # file name : example_PTA_2
         # Add a QLabel with the image to the left side of the grid
-        self.label_picture = PictureFrame()
+        self.label_picture = PictureFrame(args.image_path)
         
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
-        self.dataframe = DataFrame()
+        self.dataframe = DataFrame(args.json_path)
         self.addWidget(self.dataframe, 0, 1, 3, 2)
 
         self.modifyframe = ModifyFrame()
         self.addWidget(self.modifyframe, 3, 1, 1, 2)
 
 class PictureFrame(QFrame):
-    def __init__(self):
+    def __init__(self, image_path):
         super().__init__()
         
         self.setFixedSize(800, 960)
@@ -66,7 +70,8 @@ class PictureFrame(QFrame):
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
-        self.im = QPixmap("./example_PTA_2.jpg")
+        print(image_path)
+        self.im = QPixmap("./example/example_PTA_2.jpg")
         self.scene = QGraphicsScene(self)
         self.scene.addPixmap(self.im)
         self.view.setScene(self.scene)
@@ -95,7 +100,7 @@ class PictureFrame(QFrame):
         self.view.scale(1 / 1.2, 1 / 1.2)
 
 class DataFrame(QFrame):
-    def __init__(self):
+    def __init__(self, json_path):
         super().__init__()
 
         self.setStyleSheet("background-color:darkgrey")
@@ -107,7 +112,7 @@ class DataFrame(QFrame):
         self.data_air_fal = []  # X O
         self.data_bon_tru = []  # ] [
         self.data_bon_fal = []  # > <
-        self.readfile('example_PTA_2.json')
+        self.readfile('./example/example_PTA_2.json')
         all_list = [self.data_air_tru] + [self.data_air_fal] + [self.data_bon_tru] + [self.data_bon_fal]
         symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<']
 
@@ -320,9 +325,36 @@ class Menubar(QMenuBar):
         save_action = QAction('Save', self)
         file_menu.addAction(save_action)
 
+def check_path_valid(input_path):
+    file_names = []
+    if os.path.isfile(input_path):
+        file_names.append(os.path.basename(input_path))
+    elif os.path.exists(input_path):
+        # print(f"Valid path: {input_path}")
+        # Process the valid path
+        for file_name in os.listdir(input_path):
+            file_names.append(file_name)
+    else:
+        raise FileNotFoundError(f"File or folder not found: {input_path}  !\nThe program might crash later !")
+        # print(f"Cannot find path: {input_path}")
+    # print(file_names)
+
 def main():
+    parser = argparse.ArgumentParser(description='The following is the arguments of this application')
+    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './example/example_PTA_2.jpg')
+    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './example/example_PTA_2.json')
+    args = parser.parse_args()
+    
+    try:
+        check_path_valid(args.image_path)
+        check_path_valid(args.json_path)
+    except FileNotFoundError as e:
+        print(e)
+        input("Press Enter to continue...")
+    
+    # print(sys.argv) # ['pyQT_data_checker.py']
     app = QApplication(sys.argv)
-    window = ImageInfoWindow()
+    window = ImageInfoWindow(args)
     window.show()
     window.resize(1920, 1080)
 
