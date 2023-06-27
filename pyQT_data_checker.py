@@ -48,10 +48,10 @@ class GridLayout(QGridLayout):
         
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
-        self.dataframe = DataFrame(args.json_path)
+        self.dataframe = DataFrame(self)
         self.addWidget(self.dataframe, 0, 1, 3, 2)
 
-        self.modifyframe = ModifyFrame(args.json_path)
+        self.modifyframe = ModifyFrame(self, args.json_path)
         self.addWidget(self.modifyframe, 3, 1, 1, 2)
 
 class PictureFrame(QFrame):
@@ -102,8 +102,9 @@ class PictureFrame(QFrame):
         self.view.scale(1 / 1.2, 1 / 1.2)
 
 class DataFrame(QFrame):
-    def __init__(self, json_path):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
 
         self.setStyleSheet("background-color:darkgrey")
         
@@ -118,14 +119,14 @@ class DataFrame(QFrame):
         all_list = [self.data_air_tru] + [self.data_air_fal] + [self.data_bon_tru] + [self.data_bon_fal]
         symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<']
 
-        freq = ['125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
+        self.freq = ['125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
         threshold = []
         set_l = 0
         set_r = 0
         for k in range(len(all_list)):
             threshold_tmep_l = [f'Left    {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
-            for i in freq:
+            for i in self.freq:
                 for j in all_list[k]:
                     if (i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
@@ -149,7 +150,7 @@ class DataFrame(QFrame):
         for i in range(4):
             title_i = QLabel(title[i])
             title_i.setFont(QFont('Arial', 14, QFont.Bold))
-            table = MyTable(freq, threshold[i*2:i*2+2])
+            table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
             table.cellClicked.connect(table.handle_cell_clicked)
 
             self.DataFrame_Layout.addWidget(title_i)
@@ -172,8 +173,20 @@ class DataFrame(QFrame):
                 self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5]])
         
 class MyTable(QTableWidget):
-    def __init__(self, freq, threshold):
+    def __init__(self, parent, freq, threshold, which_table):
         super().__init__()
+        self.parent = parent
+
+        match which_table:
+            case 0:
+                self.table = 'Air with masking'
+            case 1:
+                self.table = 'Air without masking'
+            case 2:
+                self.table = 'Bone with masking'
+            case 3:
+                self.table = 'Bone without masking'
+
         font = QFont('Arial', 12, QFont.Bold)
         self.setFont(font)
 
@@ -204,15 +217,22 @@ class MyTable(QTableWidget):
         # Retrieve the content of the clicked cell
         item = self.item(row, column)
         # content = item.text()
-        content = "Empty" if item.text() == '' else item.text()
+        content = "None" if item.text() == '' else item.text()
             
         # Print the clicked cell's information
-        print("Clicked Cell - Row:", row, "Column:", column)
-        print("Content:", content)
-    
+        # print(f"This table is {self.table}")
+        # print("Clicked Cell - Row:", row, "Column:", column)
+        # print("Content:", content)
+        
+        self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
+        self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
+        self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+        self.parent.modifyframe.input_line1.setText(content)
+
 class ModifyFrame(QFrame):
-    def __init__(self, json_path):
+    def __init__(self, parent, json_path):
         super().__init__()
+        self.parent = parent
 
         self.json_path = json_path
         self.new_file = "NEW FILE"
@@ -228,27 +248,27 @@ class ModifyFrame(QFrame):
         Label1 = QLabel('Type : ')
         Label1.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
-        combo1 = QComboBox()
-        combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
+        self.combo1 = QComboBox()
+        self.combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
             'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
-        combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
-        ModifyFrame_Up_Layout.addWidget(combo1, 0, 1, 1, 3)
+        self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
+        ModifyFrame_Up_Layout.addWidget(self.combo1, 0, 1, 1, 3)
 
         Label2 = QLabel('Side : ')
         Label2.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label2, 0, 4, 1, 1)
-        combo2 = QComboBox()
-        combo2.addItems([' ', 'Left','Right', 'Both'])
-        combo2.currentIndexChanged.connect(lambda : self.GetCombo('Side'))
-        ModifyFrame_Up_Layout.addWidget(combo2, 0, 5, 1, 2)
+        self.combo2 = QComboBox()
+        self.combo2.addItems([' ', 'Left','Right', 'Both'])
+        self.combo2.currentIndexChanged.connect(lambda : self.GetCombo('Side'))
+        ModifyFrame_Up_Layout.addWidget(self.combo2, 0, 5, 1, 2)
 
         Label3 = QLabel('Frequency : ')
         Label3.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label3, 0, 7, 1, 1)
-        combo3 = QComboBox()
-        combo3.addItems([' ', '125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000'])
-        combo3.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
-        ModifyFrame_Up_Layout.addWidget(combo3, 0, 8, 1, 2)
+        self.combo3 = QComboBox()
+        self.combo3.addItems([' ', '125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000'])
+        self.combo3.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
+        ModifyFrame_Up_Layout.addWidget(self.combo3, 0, 8, 1, 2)
 
         self.Modify_Up_Frame.setLayout(ModifyFrame_Up_Layout)
 
@@ -362,7 +382,7 @@ class ModifyFrame(QFrame):
         df['Modify_Time'] = "Original"
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
-                df.loc[i, 'threshold'] = value
+                df.loc[i, 'threshold'] = int(value)
                 df.loc[i, 'Version'] = int(self.version)
                 df.loc[i, 'Modify_by'] = name
                 df.loc[i, 'Modify_Time'] = str(datetime.now())
