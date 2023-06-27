@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
 QMessageBox
-from PyQt5.QtGui import QFont, QPainter, QMouseEvent, QPen, QBrush, QColor, QPolygonF, QWheelEvent
-from PyQt5.QtCore import Qt, QPoint, QPointF, QSize, QRect
+from PyQt5.QtGui import QFont, QPainter
+from PyQt5.QtCore import Qt
 import sys
 import json
 import pandas as pd
@@ -42,10 +42,8 @@ class GridLayout(QGridLayout):
     def __init__(self, args):
         super().__init__()
         self.setSpacing(10)
-        # file name : example_PTA_2
-        # Add a QLabel with the image to the left side of the grid
+
         self.label_picture = PictureFrame(args.image_path)
-        
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
         self.dataframe = DataFrame(self)
@@ -218,11 +216,6 @@ class MyTable(QTableWidget):
         item = self.item(row, column)
         # content = item.text()
         content = "None" if item.text() == '' else item.text()
-            
-        # Print the clicked cell's information
-        # print(f"This table is {self.table}")
-        # print("Clicked Cell - Row:", row, "Column:", column)
-        # print("Content:", content)
         
         self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
         self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
@@ -237,6 +230,7 @@ class ModifyFrame(QFrame):
         self.json_path = json_path
         self.new_file = "NEW FILE"
         self.get_file_version()
+        
         self.input_save = {"Type": "None", "Side": "None", "Frequency" : "None", "Response": "None"}
 
         self.setStyleSheet("background-color:lightgrey")
@@ -244,6 +238,11 @@ class ModifyFrame(QFrame):
 
         self.Modify_Up_Frame = QFrame()
         ModifyFrame_Up_Layout = QGridLayout()
+
+        self.length = pd.read_json(self.json_path).shape[0]
+        Label_detect_amount = QLabel("Detected : {self.length}")
+        
+        Label_real_amoount = QLabel("Please input the real amount base on the picture left : ")
 
         Label1 = QLabel('Type : ')
         Label1.setAlignment(Qt.AlignCenter)
@@ -284,8 +283,6 @@ class ModifyFrame(QFrame):
         combo4 = QComboBox()
         combo4.addItems([' ', 'True', 'False'])
         combo4.currentIndexChanged.connect(lambda : self.GetCombo('Response'))
-        # ModifyFrame_Up_Layout.addWidget(combo4, 0, 8, 1, 2)
-        # self.input_line1 = QLineEdit(self.Modify_Down_Frame)
         ModifyFrame_Down_Layout.addWidget(combo4, 0, 1, 1, 1)
 
         Label5 = QLabel('Value : ')
@@ -304,7 +301,6 @@ class ModifyFrame(QFrame):
 
         Submit_BTN = QPushButton(self.Modify_Down_Frame)
         Submit_BTN.setText('確認更改')
-        #Submit_BTN.clicked.connect(lambda: self.Get_Certain_Input(self.input_line1))
         Submit_BTN.clicked.connect(self.Output_Modity)
 
         ModifyFrame_Down_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
@@ -320,9 +316,8 @@ class ModifyFrame(QFrame):
     def GetCombo(self, which_combo):
         combo = self.sender()
         text = combo.currentText()
-        # print(f'The {which_combo} you choose is {text}')
         self.input_save[which_combo] = text
-        num = combo.currentIndex()
+        # num = combo.currentIndex()
 
     def Get_Certain_Input(self, input_line):
         text = input_line.text()
@@ -430,14 +425,11 @@ def check_path_valid(input_path):
     if os.path.isfile(input_path):
         file_names.append(os.path.basename(input_path))
     elif os.path.exists(input_path):
-        # print(f"Valid path: {input_path}")
-        # Process the valid path
         for file_name in os.listdir(input_path):
             file_names.append(file_name)
     else:
         raise FileNotFoundError(f"File or folder not found: {input_path}  !\nThe program might crash later !")
-        # print(f"Cannot find path: {input_path}")
-    # print(file_names)
+        
 
 def main():
     parser = argparse.ArgumentParser(description='The following is the arguments of this application')
@@ -456,7 +448,7 @@ def main():
     app = QApplication(sys.argv)
     window = ImageInfoWindow(args)
     window.show()
-    window.resize(1920, 1080)
+    # window.resize(1920, 1080) # comments this line when using windows
 
     sys.exit(app.exec_())
 
