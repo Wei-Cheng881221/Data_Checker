@@ -1,7 +1,8 @@
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
-QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView
+QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
+QMessageBox
 from PyQt5.QtGui import QFont, QPainter, QMouseEvent, QPen, QBrush, QColor, QPolygonF, QWheelEvent
 from PyQt5.QtCore import Qt, QPoint, QPointF, QSize, QRect
 import sys
@@ -9,6 +10,7 @@ import json
 import pandas as pd
 import argparse
 import os 
+from datetime import datetime
 
 class ImageInfoWindow(QMainWindow):
     def __init__(self, args):
@@ -49,7 +51,7 @@ class GridLayout(QGridLayout):
         self.dataframe = DataFrame(args.json_path)
         self.addWidget(self.dataframe, 0, 1, 3, 2)
 
-        self.modifyframe = ModifyFrame()
+        self.modifyframe = ModifyFrame(args.json_path)
         self.addWidget(self.modifyframe, 3, 1, 1, 2)
 
 class PictureFrame(QFrame):
@@ -209,10 +211,13 @@ class MyTable(QTableWidget):
         print("Content:", content)
     
 class ModifyFrame(QFrame):
-    def __init__(self):
+    def __init__(self, json_path):
         super().__init__()
 
-        self.input_save = {"Type": "None", "Side": "None", "Frequency" : "None"}
+        self.json_path = json_path
+        self.new_file = "NEW FILE"
+        self.get_file_version()
+        self.input_save = {"Type": "None", "Side": "None", "Frequency" : "None", "Response": "None"}
 
         self.setStyleSheet("background-color:lightgrey")
         ModifyFrame_Layout = QVBoxLayout()
@@ -224,7 +229,8 @@ class ModifyFrame(QFrame):
         Label1.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         combo1 = QComboBox()
-        combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking'])
+        combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
+            'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
         ModifyFrame_Up_Layout.addWidget(combo1, 0, 1, 1, 3)
 
@@ -232,7 +238,7 @@ class ModifyFrame(QFrame):
         Label2.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label2, 0, 4, 1, 1)
         combo2 = QComboBox()
-        combo2.addItems([' ', 'Left','Right'])
+        combo2.addItems([' ', 'Left','Right', 'Both'])
         combo2.currentIndexChanged.connect(lambda : self.GetCombo('Side'))
         ModifyFrame_Up_Layout.addWidget(combo2, 0, 5, 1, 2)
 
@@ -241,7 +247,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Up_Layout.addWidget(Label3, 0, 7, 1, 1)
         combo3 = QComboBox()
         combo3.addItems([' ', '125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000'])
-        combo2.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
+        combo3.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
         ModifyFrame_Up_Layout.addWidget(combo3, 0, 8, 1, 2)
 
         self.Modify_Up_Frame.setLayout(ModifyFrame_Up_Layout)
@@ -251,26 +257,37 @@ class ModifyFrame(QFrame):
         self.Modify_Down_Frame = QFrame()
         ModifyFrame_Down_Layout = QGridLayout()
 
-        Label4 = QLabel('Value : ')
+        Label4 = QLabel('Response : ')
         Label4.setAlignment(Qt.AlignCenter)
         ModifyFrame_Down_Layout.addWidget(Label4, 0, 0, 1, 1)
 
-        self.input_line1 = QLineEdit(self.Modify_Down_Frame)
-        ModifyFrame_Down_Layout.addWidget(self.input_line1, 0, 1, 1, 1)
+        combo4 = QComboBox()
+        combo4.addItems([' ', 'True', 'False'])
+        combo4.currentIndexChanged.connect(lambda : self.GetCombo('Response'))
+        # ModifyFrame_Up_Layout.addWidget(combo4, 0, 8, 1, 2)
+        # self.input_line1 = QLineEdit(self.Modify_Down_Frame)
+        ModifyFrame_Down_Layout.addWidget(combo4, 0, 1, 1, 1)
 
-        Label5 = QLabel('Name : ')
+        Label5 = QLabel('Value : ')
         Label5.setAlignment(Qt.AlignCenter)
         ModifyFrame_Down_Layout.addWidget(Label5, 0, 2, 1, 1)
 
+        self.input_line1 = QLineEdit(self.Modify_Down_Frame)
+        ModifyFrame_Down_Layout.addWidget(self.input_line1, 0, 3, 1, 1)
+
+        Label6 = QLabel('Name : ')
+        Label6.setAlignment(Qt.AlignCenter)
+        ModifyFrame_Down_Layout.addWidget(Label6, 0, 4, 1, 1)
+
         self.input_line2 = QLineEdit(self.Modify_Down_Frame)
-        ModifyFrame_Down_Layout.addWidget(self.input_line2, 0, 3, 1, 1)
+        ModifyFrame_Down_Layout.addWidget(self.input_line2, 0, 5, 1, 1)
 
         Submit_BTN = QPushButton(self.Modify_Down_Frame)
         Submit_BTN.setText('確認更改')
         #Submit_BTN.clicked.connect(lambda: self.Get_Certain_Input(self.input_line1))
-        Submit_BTN.clicked.connect(self.Get_All_Input)
+        Submit_BTN.clicked.connect(self.Output_Modity)
 
-        ModifyFrame_Down_Layout.addWidget(Submit_BTN, 0, 5, 1, 1)
+        ModifyFrame_Down_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
 
         self.Modify_Down_Frame.setLayout(ModifyFrame_Down_Layout)
 
@@ -291,14 +308,77 @@ class ModifyFrame(QFrame):
         text = input_line.text()
         print(text)
 
-    def Get_All_Input(self):
-        value = self.input_line1.text()
-        name  = self.input_line2.text()
-        # print(self.input_save)
+    def Output_Modity(self):
+
         print(f'Type      : {self.input_save["Type"]}')
         print(f'Side      : {self.input_save["Side"]}')
         print(f'Frequency : {self.input_save["Frequency"]}')
+        print(f'Response  : {self.input_save["Response"]}')
+        value = self.input_line1.text()
+        name  = self.input_line2.text()
         print(f'The value you input is {value}, and your name is {name}')
+        print(f'The file you are modifying is {self.json_path}')
+        print(f'The saving file is {self.new_file}')
+        # [' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
+        #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
+        if self.input_save["Type"] == 'Air with masking':
+            if self.input_save["Side"] == 'Left':
+                measurementType = 'AIR_MASKED_LEFT'
+            elif self.input_save["Side"] == 'Right':
+                measurementType = 'AIR_MASKED_RIGHT'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'Air without masking':
+            if self.input_save["Side"] == 'Left':
+                measurementType = 'AIR_UNMASKED_LEFT'
+            elif self.input_save["Side"] == 'Right':
+                measurementType = 'AIR_UNMASKED_RIGHT'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'Bone with masking':
+            if self.input_save["Side"] == 'Left':
+                measurementType = 'BONE_UNMASKED_LEFT'
+            elif self.input_save["Side"] == 'Right':
+                measurementType = 'BONE_UNMASKED_RIGHT'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'Bone without masking':
+            if self.input_save["Side"] == 'Left':
+                measurementType = 'BONE_UNMASKED_LEFT'
+            elif self.input_save["Side"] == 'Right':
+                measurementType = 'BONE_UNMASKED_RIGHT'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+
+        #Write to a new json file
+        df = pd.read_json(self.json_path)
+        
+        df['Version'] = "Original"
+        df['Modify_by'] = "Original"
+        df['Modify_Time'] = "Original"
+        for i in range(df.shape[0]):
+            if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
+                df.loc[i, 'threshold'] = value
+                df.loc[i, 'Version'] = int(self.version)
+                df.loc[i, 'Modify_by'] = name
+                df.loc[i, 'Modify_Time'] = str(datetime.now())
+
+        new_file_content = df.to_json(orient='records', indent=4)
+        
+        with open(self.new_file, 'w') as file:
+            file.write(new_file_content)
+
+    def get_file_version(self):
+        self.version = 1
+        while True:
+            self.new_file = f"{os.path.splitext(self.json_path)[0]}_v{self.version}.json"
+            if not os.path.exists(self.new_file):
+                break
+            self.version += 1
 
 class Menubar(QMenuBar):
     def __init__(self, parent):

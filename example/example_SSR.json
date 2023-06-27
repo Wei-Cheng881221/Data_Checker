@@ -1,0 +1,56 @@
+[
+    {
+        "ear": "both",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "SOUND_FIELD",
+        "frequency": 500,
+        "threshold": 20,
+        "response": true
+    },
+    {
+        "ear": "both",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "SOUND_FIELD",
+        "frequency": 4000,
+        "threshold": 35,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 2000,
+        "threshold": 25,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 1000,
+        "threshold": 20,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 2000,
+        "threshold": 65,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 1000,
+        "threshold": 65,
+        "response": true
+    }
+]

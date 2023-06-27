@@ -1,0 +1,200 @@
+[
+    {
+        "ear": "right",
+        "conduction": "bone",
+        "masking": false,
+        "measurementType": "BONE_UNMASKED_RIGHT",
+        "frequency": 500,
+        "threshold": 5,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 3000,
+        "threshold": 15,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "bone",
+        "masking": false,
+        "measurementType": "BONE_UNMASKED_RIGHT",
+        "frequency": 1000,
+        "threshold": 0,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "bone",
+        "masking": false,
+        "measurementType": "BONE_UNMASKED_RIGHT",
+        "frequency": 2000,
+        "threshold": 5,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "bone",
+        "masking": true,
+        "measurementType": "BONE_MASKED_LEFT",
+        "frequency": 4000,
+        "threshold": 15,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_MASKED_LEFT",
+        "frequency": 3000,
+        "threshold": 45,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 6000,
+        "threshold": 45,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 2000,
+        "threshold": 15,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 500,
+        "threshold": 20,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": true,
+        "measurementType": "AIR_MASKED_LEFT",
+        "frequency": 4000,
+        "threshold": 55,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 8000,
+        "threshold": 70,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 250,
+        "threshold": 25,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 1000,
+        "threshold": 10,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 8000,
+        "threshold": 55,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 2000,
+        "threshold": 30,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 500,
+        "threshold": 10,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 4000,
+        "threshold": 30,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 125,
+        "threshold": 30,
+        "response": true
+    },
+    {
+        "ear": "left",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_LEFT",
+        "frequency": 1000,
+        "threshold": 25,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 6000,
+        "threshold": 30,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 250,
+        "threshold": 15,
+        "response": true
+    },
+    {
+        "ear": "right",
+        "conduction": "air",
+        "masking": false,
+        "measurementType": "AIR_UNMASKED_RIGHT",
+        "frequency": 125,
+        "threshold": 15,
+        "response": true
+    }
+]
