@@ -133,11 +133,11 @@ class DataFrame(QFrame):
                     if (i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
                         set_l = 1
-                        break
+                        continue
                     if (i == str(j[1]) and str(j[0]) == 'right'):
                         threshold_tmep_r.append(j[2])
                         set_r = 1
-                        break
+                        continue
                 if set_l == 0:
                     threshold_tmep_l.append('')
                 if set_r == 0:
