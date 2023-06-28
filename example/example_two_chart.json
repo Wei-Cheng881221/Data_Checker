@@ -76,7 +76,7 @@
         "conduction": "bone",
         "masking": false,
         "measurementType": "BONE_UNMASKED_RIGHT",
-        "frequency": 1500,
+        "frequency": 2000,
         "threshold": 65,
         "response": true
     },
@@ -133,8 +133,7 @@
         "frequency": 4000,
         "threshold": 45,
         "response": true
-    }
-][
+    },
     {
         "ear": "left",
         "conduction": "air",
@@ -217,7 +216,7 @@
         "response": true
     },
     {
-        "ear": "left",
+        "ear": "right",
         "conduction": "air",
         "masking": false,
         "measurementType": "HEARING_AID",
@@ -226,7 +225,7 @@
         "response": true
     },
     {
-        "ear": "left",
+        "ear": "right",
         "conduction": "air",
         "masking": false,
         "measurementType": "HEARING_AID",
@@ -235,7 +234,7 @@
         "response": true
     },
     {
-        "ear": "left",
+        "ear": "right",
         "conduction": "air",
         "masking": false,
         "measurementType": "HEARING_AID",
@@ -244,7 +243,7 @@
         "response": true
     },
     {
-        "ear": "left",
+        "ear": "right",
         "conduction": "air",
         "masking": false,
         "measurementType": "HEARING_AID",
@@ -253,7 +252,7 @@
         "response": true
     },
     {
-        "ear": "left",
+        "ear": "right",
         "conduction": "air",
         "masking": false,
         "measurementType": "HEARING_AID",

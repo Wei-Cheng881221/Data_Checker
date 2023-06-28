@@ -46,7 +46,7 @@ class GridLayout(QGridLayout):
         self.label_picture = PictureFrame(args.image_path)
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
-        self.dataframe = DataFrame(self)
+        self.dataframe = DataFrame(self,args.json_path)
         self.addWidget(self.dataframe, 0, 1, 3, 2)
 
         self.modifyframe = ModifyFrame(self, args.json_path)
@@ -70,8 +70,9 @@ class PictureFrame(QFrame):
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
-        print(image_path)
-        self.im = QPixmap("./example/example_PTA_2.jpg")
+        # print(image_path)
+        # self.im = QPixmap("./example/example_PTA_2.jpg")
+        self.im = QPixmap(image_path)
         self.scene = QGraphicsScene(self)
         self.scene.addPixmap(self.im)
         self.view.setScene(self.scene)
@@ -100,9 +101,10 @@ class PictureFrame(QFrame):
         self.view.scale(1 / 1.2, 1 / 1.2)
 
 class DataFrame(QFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, json_path):
         super().__init__()
         self.parent = parent
+        self.json_path = json_path
 
         self.setStyleSheet("background-color:darkgrey")
         
@@ -113,7 +115,9 @@ class DataFrame(QFrame):
         self.data_air_fal = []  # X O
         self.data_bon_tru = []  # ] [
         self.data_bon_fal = []  # > <
-        self.readfile('./example/example_PTA_2.json')
+        print(self.json_path)
+        self.readfile(self.json_path)
+        # self.readfile('./example/example_PTA_2.json')
         all_list = [self.data_air_tru] + [self.data_air_fal] + [self.data_bon_tru] + [self.data_bon_fal]
         symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<']
 
