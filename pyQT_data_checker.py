@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox
+QMessageBox, QAbstractScrollArea
 from PyQt5.QtGui import QFont, QPainter
 from PyQt5.QtCore import Qt
 import sys
@@ -47,21 +47,21 @@ class GridLayout(QGridLayout):
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
         self.dataframe = DataFrame(self,args.json_path)
-        self.addWidget(self.dataframe, 0, 1, 3, 2)
+        self.addWidget(self.dataframe, 0, 1, 3, 1)
 
         self.modifyframe = ModifyFrame(self, args.json_path)
-        self.addWidget(self.modifyframe, 3, 1, 1, 2)
+        self.addWidget(self.modifyframe, 3, 1, 1, 1)
 
 class PictureFrame(QFrame):
     def __init__(self, image_path):
         super().__init__()
-        
-        self.setFixedSize(800, 960)
+
+        self.setFixedSize(1000, 960)
         self.drag_pos = None
         self.zoom_factor = 1.0
 
         self.view = QGraphicsView(self)
-        self.view.setFixedSize(800, 960)
+        self.view.setFixedSize(1000, 960)
         self.view.setFrameShape(QFrame.NoFrame)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -189,7 +189,7 @@ class MyTable(QTableWidget):
             case 3:
                 self.table = 'Bone without masking'
 
-        font = QFont('Arial', 12, QFont.Bold)
+        font = QFont('Arial', 14, QFont.Bold)
         self.setFont(font)
 
         # Set number of rows and columns
@@ -214,6 +214,7 @@ class MyTable(QTableWidget):
                 item = QTableWidgetItem(str(threshold[j][i]))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.setItem(j, i, item)
+                self.resizeColumnsToContents()
 
     def handle_cell_clicked(self, row, column):
         # Retrieve the content of the clicked cell
