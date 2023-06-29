@@ -151,7 +151,7 @@ class DataFrame(QFrame):
 
         for i in range(4):
             title_i = QLabel(title[i])
-            title_i.setFont(QFont('Arial', 14, QFont.Bold))
+            title_i.setFont(QFont('Arial', 18, QFont.Bold))
             table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
             table.cellClicked.connect(table.handle_cell_clicked)
 
@@ -244,34 +244,35 @@ class ModifyFrame(QFrame):
         self.Modify_Up_Frame = QFrame()
         ModifyFrame_Up_Layout = QGridLayout()
 
-        self.length = pd.read_json(self.json_path).shape[0]
-        Label_detect_amount = QLabel("Detected : {self.length}")
-        
-        Label_real_amoount = QLabel("Please input the real amount base on the picture left : ")
-
         Label1 = QLabel('Type : ')
+        Label1.setFont(QFont('Arial', 12))
         Label1.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         self.combo1 = QComboBox()
         self.combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
             'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
+        self.combo1.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo1, 0, 1, 1, 3)
 
         Label2 = QLabel('Side : ')
+        Label2.setFont(QFont('Arial', 12))
         Label2.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label2, 0, 4, 1, 1)
         self.combo2 = QComboBox()
         self.combo2.addItems([' ', 'Left','Right', 'Both'])
         self.combo2.currentIndexChanged.connect(lambda : self.GetCombo('Side'))
+        self.combo2.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo2, 0, 5, 1, 2)
 
         Label3 = QLabel('Frequency : ')
+        Label3.setFont(QFont('Arial', 12))
         Label3.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label3, 0, 7, 1, 1)
         self.combo3 = QComboBox()
         self.combo3.addItems([' ', '125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000'])
         self.combo3.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
+        self.combo3.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo3, 0, 8, 1, 2)
 
         self.Modify_Up_Frame.setLayout(ModifyFrame_Up_Layout)
@@ -282,15 +283,18 @@ class ModifyFrame(QFrame):
         ModifyFrame_Down_Layout = QGridLayout()
 
         Label4 = QLabel('Response : ')
+        Label4.setFont(QFont('Arial', 12))
         Label4.setAlignment(Qt.AlignCenter)
         ModifyFrame_Down_Layout.addWidget(Label4, 0, 0, 1, 1)
 
-        combo4 = QComboBox()
-        combo4.addItems([' ', 'True', 'False'])
-        combo4.currentIndexChanged.connect(lambda : self.GetCombo('Response'))
-        ModifyFrame_Down_Layout.addWidget(combo4, 0, 1, 1, 1)
+        self.combo4 = QComboBox()
+        self.combo4.addItems([' ', 'True', 'False'])
+        self.combo4.currentIndexChanged.connect(lambda : self.GetCombo('Response'))
+        self.combo4.setFont(QFont('Arial', 12))
+        ModifyFrame_Down_Layout.addWidget(self.combo4, 0, 1, 1, 1)
 
         Label5 = QLabel('Value : ')
+        Label5.setFont(QFont('Arial', 12))
         Label5.setAlignment(Qt.AlignCenter)
         ModifyFrame_Down_Layout.addWidget(Label5, 0, 2, 1, 1)
 
@@ -298,24 +302,56 @@ class ModifyFrame(QFrame):
         ModifyFrame_Down_Layout.addWidget(self.input_line1, 0, 3, 1, 1)
 
         Label6 = QLabel('Name : ')
+        Label6.setFont(QFont('Arial', 12))
         Label6.setAlignment(Qt.AlignCenter)
         ModifyFrame_Down_Layout.addWidget(Label6, 0, 4, 1, 1)
 
         self.input_line2 = QLineEdit(self.Modify_Down_Frame)
         ModifyFrame_Down_Layout.addWidget(self.input_line2, 0, 5, 1, 1)
 
-        Submit_BTN = QPushButton(self.Modify_Down_Frame)
-        Submit_BTN.setText('確認更改')
-        Submit_BTN.clicked.connect(self.Output_Modity)
+        Update_BTN = QPushButton(self.Modify_Down_Frame)
+        Update_BTN.setText('確認更改')
+        Update_BTN.clicked.connect(self.Output_Modity)
 
-        ModifyFrame_Down_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
+        ModifyFrame_Down_Layout.addWidget(Update_BTN, 0, 6, 1, 1)
 
         self.Modify_Down_Frame.setLayout(ModifyFrame_Down_Layout)
 
         ###################################################
-        
+        self.length = pd.read_json(self.json_path).shape[0]
+
+        self.Modify_Check_Frame = QFrame()
+        ModifyFrame_Check_Layout = QGridLayout()
+
+        Label_detect_amount = QLabel(f"Detected amount of symblos : ")
+        Label_detect_amount.setFont(QFont('Arial', 12))
+        ModifyFrame_Check_Layout.addWidget(Label_detect_amount, 0, 1, 1, 1)  # y, x, height, width
+
+        self.input_line3 = QLineEdit(self.Modify_Check_Frame)
+        self.input_line3.setFont(QFont('Arial', 12))
+        self.input_line3.setText(f'{self.length}')
+        ModifyFrame_Check_Layout.addWidget(self.input_line3, 0, 2, 1, 1)
+
+        Label_real_amoount = QLabel("Please input the real amount base on the picture left : ")
+        Label_real_amoount.setFont(QFont('Arial', 12))
+        ModifyFrame_Check_Layout.addWidget(Label_real_amoount, 0, 3, 1, 1)
+
+        self.input_line4 = QLineEdit(self.Modify_Check_Frame)
+        self.input_line4.setFont(QFont('Arial', 12))
+        ModifyFrame_Check_Layout.addWidget(self.input_line4, 0, 4, 1, 1)
+
+        Submit_BTN = QPushButton(self.Modify_Down_Frame)
+        Submit_BTN.setText('新增統計資料')
+        # Submit_BTN.clicked.connect(self.Output_Modity)
+
+        ModifyFrame_Check_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
+
+        self.Modify_Check_Frame.setLayout(ModifyFrame_Check_Layout)
+        ###################################################
+
         ModifyFrame_Layout.addWidget(self.Modify_Up_Frame)
         ModifyFrame_Layout.addWidget(self.Modify_Down_Frame)
+        ModifyFrame_Layout.addWidget(self.Modify_Check_Frame)
         self.setLayout(ModifyFrame_Layout)
 
     def GetCombo(self, which_combo):
@@ -341,6 +377,7 @@ class ModifyFrame(QFrame):
         print(f'The saving file is {self.new_file}')
         # [' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
         #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
+        measurementType = None
         if self.input_save["Type"] == 'Air with masking':
             if self.input_save["Side"] == 'Left':
                 measurementType = 'AIR_MASKED_LEFT'
