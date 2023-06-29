@@ -207,7 +207,6 @@ class MyTable(QTableWidget):
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setFont(font)
 
-        #print(threshold)
         # Set cell values for threshold row
         for j in range(len(threshold)):
             for i in range(len(threshold[0])):
@@ -299,6 +298,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Down_Layout.addWidget(Label5, 0, 2, 1, 1)
 
         self.input_line1 = QLineEdit(self.Modify_Down_Frame)
+        self.input_line1.setFont(QFont('Arial', 12))
         ModifyFrame_Down_Layout.addWidget(self.input_line1, 0, 3, 1, 1)
 
         Label6 = QLabel('Name : ')
@@ -307,6 +307,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Down_Layout.addWidget(Label6, 0, 4, 1, 1)
 
         self.input_line2 = QLineEdit(self.Modify_Down_Frame)
+        self.input_line2.setFont(QFont('Arial', 12))
         ModifyFrame_Down_Layout.addWidget(self.input_line2, 0, 5, 1, 1)
 
         Update_BTN = QPushButton(self.Modify_Down_Frame)
