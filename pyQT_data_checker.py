@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox, QAbstractScrollArea
+QMessageBox
 from PyQt5.QtGui import QFont, QPainter
 from PyQt5.QtCore import Qt
 import sys
@@ -115,13 +115,14 @@ class DataFrame(QFrame):
         self.data_air_fal = []  # X O
         self.data_bon_tru = []  # ] [
         self.data_bon_fal = []  # > <
-        print(self.json_path)
-        self.readfile(self.json_path)
-        # self.readfile('./example/example_PTA_2.json')
-        all_list = [self.data_air_tru] + [self.data_air_fal] + [self.data_bon_tru] + [self.data_bon_fal]
-        symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<']
+        self.data_sf = []
+        self.extra = []
 
-        self.freq = ['125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
+        self.readfile(self.json_path)
+        all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]  + [self.data_sf]
+        symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<', 'S', 'S']
+
+        self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         threshold = []
         set_l = 0
         set_r = 0
@@ -138,6 +139,12 @@ class DataFrame(QFrame):
                         threshold_tmep_r.append(j[2])
                         set_r = 1
                         continue
+                    if (i == str(j[1]) and str(j[0]) == 'both'):
+                        threshold_tmep_l.append(j[2])
+                        threshold_tmep_r.append(j[2])
+                        set_l = 1
+                        set_r = 1
+                        continue
                 if set_l == 0:
                     threshold_tmep_l.append('')
                 if set_r == 0:
@@ -147,32 +154,58 @@ class DataFrame(QFrame):
             threshold.append(threshold_tmep_l)
             threshold.append(threshold_tmep_r)
 
-        title = ['Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking']
+        title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
+                'Sound Field']
 
-        for i in range(4):
+        # Normal PTA Table
+        for i in range(5):
             title_i = QLabel(title[i])
-            title_i.setFont(QFont('Arial', 18, QFont.Bold))
+            title_i.setFont(QFont('Arial', 12, QFont.Bold))
             table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
             table.cellClicked.connect(table.handle_cell_clicked)
 
             self.DataFrame_Layout.addWidget(title_i)
             self.DataFrame_Layout.addWidget(table)
+        
+        #Sound Field Table
+        # title_i = QLabel('Sound Field')
+        # title_i.setFont(QFont('Arial', 18, QFont.Bold))
+        # for i in self.freq:
+        #     for i in range(self.data_sf):
+
+        # table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
+        # table.cellClicked.connect(table.handle_cell_clicked)
+
+        # self.DataFrame_Layout.addWidget(title_i)
+        # self.DataFrame_Layout.addWidget(table)
+
         self.setLayout(self.DataFrame_Layout)
 
     def readfile(self, file):
         df = pd.read_json(file)
 
-        # print(df)
-        # print(df.iloc[0])   # first row
         for i in range(df.shape[0]):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
-                self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5]])
+                self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
             elif(df.iloc[i]['conduction'] == 'air' and df.iloc[i]['masking'] == False):
-                self.data_air_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5]])
+                if(df.iloc[i]['measurementType'] == 'SOUND_FIELD'):   # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
+                    self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
+                # elif(df.iloc[i]['measurementType'] == 'NR_SOUND_FIELD'):
+                #     self.extra.append()
+                elif(df.iloc[i]['measurementType'] == 'AL'):
+                    self.extra.append('')
+                elif(df.iloc[i]['measurementType'] == 'AR'):
+                    self.extra.append('')
+                elif(df.iloc[i]['measurementType'] == 'COCHLEAR_IMPLANT'):
+                    self.extra.append('')
+                elif(df.iloc[i]['measurementType'] == 'HEARING_AID'):
+                    self.extra.append('')
+                else:
+                    self.data_air_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == True):
-                self.data_bon_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5]])
+                self.data_bon_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == False):
-                self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5]])
+                self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
         
 class MyTable(QTableWidget):
     def __init__(self, parent, freq, threshold, which_table):
@@ -189,7 +222,7 @@ class MyTable(QTableWidget):
             case 3:
                 self.table = 'Bone without masking'
 
-        font = QFont('Arial', 14, QFont.Bold)
+        font = QFont('Arial', 12, QFont.Bold)
         self.setFont(font)
 
         # Set number of rows and columns
@@ -348,6 +381,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Check_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
 
         self.Modify_Check_Frame.setLayout(ModifyFrame_Check_Layout)
+
         ###################################################
 
         ModifyFrame_Layout.addWidget(self.Modify_Up_Frame)
@@ -361,12 +395,7 @@ class ModifyFrame(QFrame):
         self.input_save[which_combo] = text
         # num = combo.currentIndex()
 
-    def Get_Certain_Input(self, input_line):
-        text = input_line.text()
-        print(text)
-
     def Output_Modity(self):
-
         print(f'Type      : {self.input_save["Type"]}')
         print(f'Side      : {self.input_save["Side"]}')
         print(f'Frequency : {self.input_save["Frequency"]}')
