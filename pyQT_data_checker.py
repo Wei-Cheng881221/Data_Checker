@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox
+QMessageBox, QAbstractItemView
 from PyQt5.QtGui import QFont, QPainter
 from PyQt5.QtCore import Qt
 import sys
@@ -70,8 +70,6 @@ class PictureFrame(QFrame):
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
-        # print(image_path)
-        # self.im = QPixmap("./example/example_PTA_2.jpg")
         self.im = QPixmap(image_path)
         self.scene = QGraphicsScene(self)
         self.scene.addPixmap(self.im)
@@ -107,30 +105,27 @@ class DataFrame(QFrame):
         self.json_path = json_path
 
         self.setStyleSheet("background-color:darkgrey")
-        
+
+        # self.update_Table(self.json_path)
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
 
-                                # L R
-        self.data_air_tru = []  # ■ ▲
-        self.data_air_fal = []  # X O
-        self.data_bon_tru = []  # ] [
-        self.data_bon_fal = []  # > <
-        self.data_sf = []
-        self.extra = []
+    # def update_Table(self, json_path):
+        
 
         self.readfile(self.json_path)
-        all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]  + [self.data_sf]
-        symbol_list = ['■', '▲', 'X', 'O', ']', '[', '>', '<', 'S', 'S']
-
+        # self.readfile(json_path)
+        self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]  + [self.data_sf]
+        symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[', 'S', 'S']
+        # symbol_list_SF = ['S', 'S', ]
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
-        threshold = []
+        self.threshold = []
         set_l = 0
         set_r = 0
-        for k in range(len(all_list)):
+        for k in range(len(self.all_list)):
             threshold_tmep_l = [f'Left    {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
             for i in self.freq:
-                for j in all_list[k]:
+                for j in self.all_list[k]:
                     if (i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
                         set_l = 1
@@ -151,21 +146,23 @@ class DataFrame(QFrame):
                     threshold_tmep_r.append('')
                 set_l = 0
                 set_r = 0
-            threshold.append(threshold_tmep_l)
-            threshold.append(threshold_tmep_r)
+            self.threshold.append(threshold_tmep_l)
+            self.threshold.append(threshold_tmep_r)
 
-        title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
+        self.title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
                 'Sound Field']
 
         # Normal PTA Table
+        self.tables = [MyTable(self.parent, [], [], 0) for i in range(5)]
         for i in range(5):
-            title_i = QLabel(title[i])
+            title_i = QLabel(self.title[i])
             title_i.setFont(QFont('Arial', 12, QFont.Bold))
-            table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
-            table.cellClicked.connect(table.handle_cell_clicked)
+            self.tables[i].__init__(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
+            #table = MyTable(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
+            self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
 
             self.DataFrame_Layout.addWidget(title_i)
-            self.DataFrame_Layout.addWidget(table)
+            self.DataFrame_Layout.addWidget(self.tables[i])
         
         #Sound Field Table
         # title_i = QLabel('Sound Field')
@@ -182,8 +179,16 @@ class DataFrame(QFrame):
         self.setLayout(self.DataFrame_Layout)
 
     def readfile(self, file):
-        df = pd.read_json(file)
+                                # L R
+        self.data_air_tru = []  # ☐ △
+        self.data_air_fal = []  # X O
+        self.data_bon_tru = []  # ] [
+        self.data_bon_fal = []  # > <
+        self.data_sf = []
+        self.extra = []
 
+        df = pd.read_json(file)
+        # print(file)
         for i in range(df.shape[0]):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
                 self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
@@ -206,21 +211,34 @@ class DataFrame(QFrame):
                 self.data_bon_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == False):
                 self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
+
+    def update_Table(self, json_path, type, side, freq, response, value):
+        self.json_path = json_path
+        self.readfile(self.json_path)
+        item = QTableWidgetItem(value)
+        item.setTextAlignment(Qt.AlignCenter)
+        index = self.freq.index(freq)
+        print(side, index, item)
+        self.tables[type].setItem(0 if side == 'Left' else 1, index+1, item)
+        # self.tables[type]
         
+
 class MyTable(QTableWidget):
     def __init__(self, parent, freq, threshold, which_table):
         super().__init__()
         self.parent = parent
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        match which_table:
+        self.which_table = which_table
+        match self.which_table:
             case 0:
-                self.table = 'Air with masking'
-            case 1:
                 self.table = 'Air without masking'
+            case 1:
+                self.table = 'Air with masking'
             case 2:
-                self.table = 'Bone with masking'
-            case 3:
                 self.table = 'Bone without masking'
+            case 3:
+                self.table = 'Bone with masking'
 
         font = QFont('Arial', 12, QFont.Bold)
         self.setFont(font)
@@ -256,7 +274,16 @@ class MyTable(QTableWidget):
         
         self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
         self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
+        # print(self.parent.dataframe.freq[column-1])
         self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+        found = False
+        for ear, freq, threshold, response in self.parent.dataframe.all_list[self.which_table]:
+            if self.parent.dataframe.freq[column-1] == str(freq):
+                if (row == 0 and ear == 'left') or(row == 1 and ear == 'right'):
+                    self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
+                    found = True
+        if found == False:
+                    self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
         self.parent.modifyframe.input_line1.setText(content)
 
 class ModifyFrame(QFrame):
@@ -302,7 +329,7 @@ class ModifyFrame(QFrame):
         Label3.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label3, 0, 7, 1, 1)
         self.combo3 = QComboBox()
-        self.combo3.addItems([' ', '125', '250', '500', '1000', '2000', '3000', '4000', '6000', '8000'])
+        self.combo3.addItems(['']+self.parent.dataframe.freq)
         self.combo3.currentIndexChanged.connect(lambda : self.GetCombo('Frequency'))
         self.combo3.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo3, 0, 8, 1, 2)
@@ -352,6 +379,7 @@ class ModifyFrame(QFrame):
         self.Modify_Down_Frame.setLayout(ModifyFrame_Down_Layout)
 
         ###################################################
+        # This part is not using right now
         self.length = pd.read_json(self.json_path).shape[0]
 
         self.Modify_Check_Frame = QFrame()
@@ -386,7 +414,7 @@ class ModifyFrame(QFrame):
 
         ModifyFrame_Layout.addWidget(self.Modify_Up_Frame)
         ModifyFrame_Layout.addWidget(self.Modify_Down_Frame)
-        ModifyFrame_Layout.addWidget(self.Modify_Check_Frame)
+        # ModifyFrame_Layout.addWidget(self.Modify_Check_Frame)
         self.setLayout(ModifyFrame_Layout)
 
     def GetCombo(self, which_combo):
@@ -409,6 +437,7 @@ class ModifyFrame(QFrame):
         #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
         measurementType = None
         if self.input_save["Type"] == 'Air with masking':
+            change_type = 1
             if self.input_save["Side"] == 'Left':
                 measurementType = 'AIR_MASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
@@ -417,6 +446,7 @@ class ModifyFrame(QFrame):
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Air without masking':
+            change_type = 0
             if self.input_save["Side"] == 'Left':
                 measurementType = 'AIR_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
@@ -425,6 +455,7 @@ class ModifyFrame(QFrame):
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Bone with masking':
+            change_type = 3
             if self.input_save["Side"] == 'Left':
                 measurementType = 'BONE_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
@@ -433,6 +464,7 @@ class ModifyFrame(QFrame):
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Bone without masking':
+            change_type = 2
             if self.input_save["Side"] == 'Left':
                 measurementType = 'BONE_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
@@ -450,6 +482,7 @@ class ModifyFrame(QFrame):
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
                 df.loc[i, 'threshold'] = int(value)
+                df.loc[i, 'response'] = self.input_save["Response"]
                 df.loc[i, 'Version'] = int(self.version)
                 df.loc[i, 'Modify_by'] = name
                 df.loc[i, 'Modify_Time'] = str(datetime.now())
@@ -458,7 +491,9 @@ class ModifyFrame(QFrame):
         
         with open(self.new_file, 'w') as file:
             file.write(new_file_content)
-
+        #load new file
+        self.parent.dataframe.update_Table(self.new_file, change_type, self.input_save["Side"], self.input_save["Frequency"], self.input_save["Response"], value)
+        
     def get_file_version(self):
         self.version = 1
         while True:
