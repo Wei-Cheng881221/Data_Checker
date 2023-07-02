@@ -2,8 +2,8 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox, QAbstractItemView
-from PyQt5.QtGui import QFont, QPainter
+QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy
+from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette
 from PyQt5.QtCore import Qt
 import sys
 import json
@@ -42,14 +42,15 @@ class GridLayout(QGridLayout):
     def __init__(self, args):
         super().__init__()
         self.setSpacing(10)
+        self.json_path = args.json_path
 
         self.label_picture = PictureFrame(args.image_path)
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
-        self.dataframe = DataFrame(self,args.json_path)
+        self.dataframe = DataFrame(self, self.json_path)
         self.addWidget(self.dataframe, 0, 1, 3, 1)
 
-        self.modifyframe = ModifyFrame(self, args.json_path)
+        self.modifyframe = ModifyFrame(self, self.json_path)
         self.addWidget(self.modifyframe, 3, 1, 1, 1)
 
 class PictureFrame(QFrame):
@@ -106,24 +107,27 @@ class DataFrame(QFrame):
 
         self.setStyleSheet("background-color:darkgrey")
 
-        # self.update_Table(self.json_path)
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
 
-    # def update_Table(self, json_path):
         
 
         self.readfile(self.json_path)
         # self.readfile(json_path)
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]  + [self.data_sf]
-        symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[', 'S', 'S']
-        # symbol_list_SF = ['S', 'S', ]
+        symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[', 'S', 'S', 'S', 'AL', 'AR', 'A(Both)', 'C(Both)']
+        symbol_list_SF = ['S', 'S', 'S', 'AL', 'AR', 'A', 'C']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
+        
         self.threshold = []
+        self.threshold_SF = [['Both S'], ['Left S'], ['Right S'], ['AL'], ['AR'], ['Both A'], ['Both C']]
+       
+       # Handle normal data input
         set_l = 0
         set_r = 0
         for k in range(len(self.all_list)):
-            threshold_tmep_l = [f'Left    {symbol_list[k*2]} ']
+            threshold_tmep_l = [f'Left   {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
+            # threshold_tmep_b = [f'Both   {symbol_list[k*2+2]} ']
             for i in self.freq:
                 for j in self.all_list[k]:
                     if (i == str(j[1]) and str(j[0]) == 'left'):
@@ -132,12 +136,6 @@ class DataFrame(QFrame):
                         continue
                     if (i == str(j[1]) and str(j[0]) == 'right'):
                         threshold_tmep_r.append(j[2])
-                        set_r = 1
-                        continue
-                    if (i == str(j[1]) and str(j[0]) == 'both'):
-                        threshold_tmep_l.append(j[2])
-                        threshold_tmep_r.append(j[2])
-                        set_l = 1
                         set_r = 1
                         continue
                 if set_l == 0:
@@ -152,29 +150,22 @@ class DataFrame(QFrame):
         self.title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
                 'Sound Field']
 
+        # Handle SoundField data input
+
+
         # Normal PTA Table
         self.tables = [MyTable(self.parent, [], [], 0) for i in range(5)]
         for i in range(5):
             title_i = QLabel(self.title[i])
-            title_i.setFont(QFont('Arial', 12, QFont.Bold))
-            self.tables[i].__init__(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
-            #table = MyTable(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
+            title_i.setFont(QFont('Arial', 10, QFont.Bold))
+            if(i == 4): # SoundField table is bigger
+                self.tables[i].__init__(self.parent, self.freq, self.threshold_SF, i)
+            else:
+                self.tables[i].__init__(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
             self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
 
             self.DataFrame_Layout.addWidget(title_i)
             self.DataFrame_Layout.addWidget(self.tables[i])
-        
-        #Sound Field Table
-        # title_i = QLabel('Sound Field')
-        # title_i.setFont(QFont('Arial', 18, QFont.Bold))
-        # for i in self.freq:
-        #     for i in range(self.data_sf):
-
-        # table = MyTable(self.parent, self.freq, threshold[i*2:i*2+2], i)
-        # table.cellClicked.connect(table.handle_cell_clicked)
-
-        # self.DataFrame_Layout.addWidget(title_i)
-        # self.DataFrame_Layout.addWidget(table)
 
         self.setLayout(self.DataFrame_Layout)
 
@@ -188,15 +179,13 @@ class DataFrame(QFrame):
         self.extra = []
 
         df = pd.read_json(file)
-        # print(file)
+
         for i in range(df.shape[0]):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
                 self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
             elif(df.iloc[i]['conduction'] == 'air' and df.iloc[i]['masking'] == False):
                 if(df.iloc[i]['measurementType'] == 'SOUND_FIELD'):   # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
                     self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
-                # elif(df.iloc[i]['measurementType'] == 'NR_SOUND_FIELD'):
-                #     self.extra.append()
                 elif(df.iloc[i]['measurementType'] == 'AL'):
                     self.extra.append('')
                 elif(df.iloc[i]['measurementType'] == 'AR'):
@@ -213,12 +202,13 @@ class DataFrame(QFrame):
                 self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
 
     def update_Table(self, json_path, type, side, freq, response, value):
-        self.json_path = json_path
-        self.readfile(self.json_path)
+        self.parent.json_path = json_path
+        self.readfile(self.parent.json_path)
         item = QTableWidgetItem(value)
+        item.setBackground(QBrush(QColor(255, 0, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq)
-        print(side, index, item)
+        # print(side, index, item)
         self.tables[type].setItem(0 if side == 'Left' else 1, index+1, item)
         # self.tables[type]
         
@@ -239,12 +229,17 @@ class MyTable(QTableWidget):
                 self.table = 'Bone without masking'
             case 3:
                 self.table = 'Bone with masking'
-
-        font = QFont('Arial', 12, QFont.Bold)
+            case 4:
+                self.table = 'Sound Field'
+            
+        font = QFont('Arial', 10, QFont.Bold)
         self.setFont(font)
 
         # Set number of rows and columns
-        self.setRowCount(2)
+        if(self.table == 'Sound Field'):
+            self.setRowCount(7)
+        else:
+            self.setRowCount(2)
         self.setColumnCount(len(freq)+1)
         
         # Set column headers
@@ -438,47 +433,61 @@ class ModifyFrame(QFrame):
         measurementType = None
         if self.input_save["Type"] == 'Air with masking':
             change_type = 1
+            conduction = "air"
+            masking = True
             if self.input_save["Side"] == 'Left':
+                ear = 'left'
                 measurementType = 'AIR_MASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
+                ear = 'right'
                 measurementType = 'AIR_MASKED_RIGHT'
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Air without masking':
             change_type = 0
+            conduction = "air"
+            masking = False
             if self.input_save["Side"] == 'Left':
+                ear = 'left'
                 measurementType = 'AIR_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
+                ear = 'right'
                 measurementType = 'AIR_UNMASKED_RIGHT'
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Bone with masking':
             change_type = 3
+            conduction = "bone"
+            masking = True
             if self.input_save["Side"] == 'Left':
+                ear = 'left'
                 measurementType = 'BONE_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
+                ear = 'right'
                 measurementType = 'BONE_UNMASKED_RIGHT'
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
         elif self.input_save["Type"] == 'Bone without masking':
             change_type = 2
+            conduction = "bone"
+            masking = True
             if self.input_save["Side"] == 'Left':
+                ear = 'left'
                 measurementType = 'BONE_UNMASKED_LEFT'
             elif self.input_save["Side"] == 'Right':
+                ear = 'right'
                 measurementType = 'BONE_UNMASKED_RIGHT'
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
 
         #Write to a new json file
-        df = pd.read_json(self.json_path)
-        
-        df['Version'] = "Original"
-        df['Modify_by'] = "Original"
-        df['Modify_Time'] = "Original"
+        df = pd.read_json(self.parent.json_path)
+
+        exist = 0
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
                 df.loc[i, 'threshold'] = int(value)
@@ -486,6 +495,18 @@ class ModifyFrame(QFrame):
                 df.loc[i, 'Version'] = int(self.version)
                 df.loc[i, 'Modify_by'] = name
                 df.loc[i, 'Modify_Time'] = str(datetime.now())
+                exist = 1
+        if(exist == 0):
+            new_insert = [ear, conduction, masking, measurementType, \
+            self.input_save["Frequency"], int(value), self.input_save["Response"],\
+            int(self.version), name, str(datetime.now())]
+            df.loc[len(df)] = new_insert
+        
+        for i in range(df.shape[0]):
+            if(pd.isnull(df.iloc[i]["Version"])):
+                df.loc[i, 'Version'] = "Original"
+                df.loc[i, 'Modify_by'] = "Original"
+                df.loc[i, 'Modify_Time'] = "Original"
 
         new_file_content = df.to_json(orient='records', indent=4)
         
