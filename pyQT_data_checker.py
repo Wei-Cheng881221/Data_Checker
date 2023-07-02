@@ -109,17 +109,14 @@ class DataFrame(QFrame):
 
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
 
-        
-
         self.readfile(self.json_path)
-        # self.readfile(json_path)
-        self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]  + [self.data_sf]
-        symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[', 'S', 'S', 'S', 'AL', 'AR', 'A(Both)', 'C(Both)']
+        self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
+        symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
         symbol_list_SF = ['S', 'S', 'S', 'AL', 'AR', 'A', 'C']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         
         self.threshold = []
-        self.threshold_SF = [['Both S'], ['Left S'], ['Right S'], ['AL'], ['AR'], ['Both A'], ['Both C']]
+        self.threshold_SF = [['Both S'], ['AL'], ['AR'], ['Both C'], ['Both A'], ['Left S'], ['Right S'], ['Left C'], ['Right C'], ['Left A'], ['Right A']]
        
        # Handle normal data input
         set_l = 0
@@ -127,7 +124,6 @@ class DataFrame(QFrame):
         for k in range(len(self.all_list)):
             threshold_tmep_l = [f'Left   {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
-            # threshold_tmep_b = [f'Both   {symbol_list[k*2+2]} ']
             for i in self.freq:
                 for j in self.all_list[k]:
                     if (i == str(j[1]) and str(j[0]) == 'left'):
@@ -146,12 +142,62 @@ class DataFrame(QFrame):
                 set_r = 0
             self.threshold.append(threshold_tmep_l)
             self.threshold.append(threshold_tmep_r)
+        
+        
+        # Handle SoundField data input
+        for i in self.freq:
+            SF_set = [0 for i in range(11)]
+            for j in self.data_sf:
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'SOUND_FIELD'):
+                    self.threshold_SF[0].append(j[2])
+                    SF_set[0] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
+                    self.threshold_SF[1].append(j[2])
+                    SF_set[1] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
+                    self.threshold_SF[2].append(j[2])
+                    SF_set[2] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'COCHLEAR_IMPLANT'):
+                    self.threshold_SF[3].append(j[2])
+                    SF_set[3] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'HEARING_AID'):
+                    self.threshold_SF[4].append(j[2])
+                    SF_set[4] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
+                    self.threshold_SF[5].append(j[2])
+                    SF_set[5] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
+                    self.threshold_SF[6].append(j[2])
+                    SF_set[6] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
+                    self.threshold_SF[7].append(j[2])
+                    SF_set[7] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
+                    self.threshold_SF[8].append(j[2])
+                    SF_set[8] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
+                    self.threshold_SF[9].append(j[2])
+                    SF_set[9] = 1
+                    continue
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
+                    self.threshold_SF[10].append(j[2])
+                    SF_set[10] = 1
+                    continue
+            for i in range(len(SF_set)):
+                if SF_set[i] == 0:
+                    self.threshold_SF[i].append('')
 
         self.title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
                 'Sound Field']
-
-        # Handle SoundField data input
-
 
         # Normal PTA Table
         self.tables = [MyTable(self.parent, [], [], 0) for i in range(5)]
@@ -176,7 +222,6 @@ class DataFrame(QFrame):
         self.data_bon_tru = []  # ] [
         self.data_bon_fal = []  # > <
         self.data_sf = []
-        self.extra = []
 
         df = pd.read_json(file)
 
@@ -184,16 +229,12 @@ class DataFrame(QFrame):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
                 self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
             elif(df.iloc[i]['conduction'] == 'air' and df.iloc[i]['masking'] == False):
-                if(df.iloc[i]['measurementType'] == 'SOUND_FIELD'):   # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
-                    self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
-                elif(df.iloc[i]['measurementType'] == 'AL'):
-                    self.extra.append('')
-                elif(df.iloc[i]['measurementType'] == 'AR'):
-                    self.extra.append('')
-                elif(df.iloc[i]['measurementType'] == 'COCHLEAR_IMPLANT'):
-                    self.extra.append('')
-                elif(df.iloc[i]['measurementType'] == 'HEARING_AID'):
-                    self.extra.append('')
+                if(df.iloc[i]['measurementType'] == 'SOUND_FIELD' or \
+                    df.iloc[i]['measurementType'] == 'AL' or \
+                    df.iloc[i]['measurementType'] == 'AR' or \
+                    df.iloc[i]['measurementType'] == 'COCHLEAR_IMPLANT' or \
+                    df.iloc[i]['measurementType'] == 'HEARING_AID'):   # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
+                    self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6], df.iloc[i]['measurementType']]) # ear, freq, threshold, response, measurementType
                 else:
                     self.data_air_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == True):
@@ -237,7 +278,7 @@ class MyTable(QTableWidget):
 
         # Set number of rows and columns
         if(self.table == 'Sound Field'):
-            self.setRowCount(7)
+            self.setRowCount(11)
         else:
             self.setRowCount(2)
         self.setColumnCount(len(freq)+1)
