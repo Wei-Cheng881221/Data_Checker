@@ -249,9 +249,10 @@ class DataFrame(QFrame):
         item.setBackground(QBrush(QColor(255, 0, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq)
-        # print(side, index, item)
-        self.tables[type].setItem(0 if side == 'Left' else 1, index+1, item)
-        # self.tables[type]
+        if(type >= 4):
+            self.tables[type].setItem(type-4, index+1, item)
+        else:
+            self.tables[type].setItem(0 if side == 'Left' else 1, index+1, item)
         
 
 class MyTable(QTableWidget):
@@ -308,18 +309,43 @@ class MyTable(QTableWidget):
         # content = item.text()
         content = "None" if item.text() == '' else item.text()
         
-        self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
-        self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
-        # print(self.parent.dataframe.freq[column-1])
-        self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
-        found = False
-        for ear, freq, threshold, response in self.parent.dataframe.all_list[self.which_table]:
-            if self.parent.dataframe.freq[column-1] == str(freq):
-                if (row == 0 and ear == 'left') or(row == 1 and ear == 'right'):
-                    self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
-                    found = True
-        if found == False:
-                    self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
+        if(self.which_table == 4):
+            match row:
+                case 0 | 5 | 6 : SF_combo = 'SOUND_FIELD'
+                case 1 : SF_combo = 'AL'
+                case 2 : SF_combo = 'AR'
+                case 3 | 7 | 8 : SF_combo = 'COCHLEAR_IMPLANT'
+                case 4 | 9 | 10 : SF_combo = 'HEARING_AID'
+            self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(SF_combo)) # type
+            self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Both' if row == 0 or row == 3 or row == 4 \
+                else ('Left' if row == 1 or row == 5 or row == 7 or row == 9 else'Right'))) # ear
+            self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+            found = False
+            for ear, freq, threshold, response, measurementtype in self.parent.dataframe.data_sf:
+                if self.parent.dataframe.freq[column-1] == str(freq):
+                    if (row == 0 and ear == 'both' and measurementtype == 'SOUND_FIELD') or \
+                    (row == 1 and ear == 'left' and measurementtype == 'AL') or (row == 1 and ear == 'right' and measurementtype == 'AR')or \
+                    (row == 1 and ear == 'both' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'both' and measurementtype == 'HEARING_AID')or \
+                    (row == 1 and ear == 'left' and measurementtype == 'SOUND_FIELD') or (row == 1 and ear == 'right' and measurementtype == 'SOUND_FIELD')or \
+                    (row == 1 and ear == 'left' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'right' and measurementtype == 'COCHLEAR_IMPLANT')or \
+                    (row == 1 and ear == 'left' and measurementtype == 'HEARING_AID') or (row == 1 and ear == 'right' and measurementtype == 'HEARING_AID'):
+                        self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
+                        found = True
+            if found == False:
+                        self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
+            self.parent.modifyframe.input_line1.setText(content)
+        else:
+            self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
+            self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
+            self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+            found = False
+            for ear, freq, threshold, response in self.parent.dataframe.all_list[self.which_table]:
+                if self.parent.dataframe.freq[column-1] == str(freq):
+                    if (row == 0 and ear == 'left') or(row == 1 and ear == 'right'):
+                        self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
+                        found = True
+            if found == False:
+                        self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
         self.parent.modifyframe.input_line1.setText(content)
 
 class ModifyFrame(QFrame):
@@ -345,7 +371,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         self.combo1 = QComboBox()
         self.combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
-            'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
+            'SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
         self.combo1.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo1, 0, 1, 1, 3)
@@ -440,7 +466,6 @@ class ModifyFrame(QFrame):
 
         Submit_BTN = QPushButton(self.Modify_Down_Frame)
         Submit_BTN.setText('新增統計資料')
-        # Submit_BTN.clicked.connect(self.Output_Modity)
 
         ModifyFrame_Check_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
 
@@ -473,7 +498,7 @@ class ModifyFrame(QFrame):
         #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
         measurementType = None
         if self.input_save["Type"] == 'Air with masking':
-            change_type = 1
+            change_type = 1 # which table
             conduction = "air"
             masking = True
             if self.input_save["Side"] == 'Left':
@@ -524,7 +549,66 @@ class ModifyFrame(QFrame):
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
-
+        elif self.input_save["Type"] == 'SOUND_FIELD':
+            conduction = "air"
+            masking = False
+            measurementType = 'SOUND_FIELD'
+            if self.input_save["Side"] == 'Both':
+                ear = 'both'
+                change_type = 4
+            elif self.input_save["Side"] == 'Left':
+                ear = 'left'
+                change_type = 9
+            elif self.input_save["Side"] == 'Right':
+                ear = 'right'
+                change_type = 10
+        elif self.input_save["Type"] == 'AL':
+            change_type = 5
+            conduction = "air"
+            masking = False
+            measurementType = 'AL'
+            if self.input_save["Side"] == 'Left':
+                ear = 'left'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'AR':
+            change_type = 6
+            conduction = "air"
+            masking = False
+            measurementType = 'AR'
+            if self.input_save["Side"] == 'Right':
+                ear = 'right'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'COCHLEAR_IMPLANT':
+            conduction = "air"
+            masking = False
+            measurementType = 'COCHLEAR_IMPLANT'
+            if self.input_save["Side"] == 'Both':
+                ear = 'both'
+                change_type = 7
+            elif self.input_save["Side"] == 'Left':
+                ear = 'left'
+                change_type = 11
+            elif self.input_save["Side"] == 'Right':
+                ear = 'right'
+                change_type = 12
+        elif self.input_save["Type"] == 'HEARING_AID':
+            conduction = "air"
+            masking = False
+            measurementType = 'HEARING_AID'
+            if self.input_save["Side"] == 'Both':
+                ear = 'both'
+                change_type = 8
+            elif self.input_save["Side"] == 'Left':
+                ear = 'left'
+                change_type = 13
+            elif self.input_save["Side"] == 'Right':
+                ear = 'right'
+                change_type = 14
+        
         #Write to a new json file
         df = pd.read_json(self.parent.json_path)
 
