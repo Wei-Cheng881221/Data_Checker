@@ -13,18 +13,18 @@ import os
 from datetime import datetime
 
 class ImageInfoWindow(QMainWindow):
-    def __init__(self, args):
+    def __init__(self, path_list):
         super().__init__()
         # self.image_path = args.image_path
         # self.json_path = args.json_path
-        self.initUI(args)
-        
-    def initUI(self, args):
-        # self.status = self.statusBar()
-        # self.status.showMessage("狀態列")
+        self.initUI(path_list)
+
+    def initUI(self, path_list):
+        self.path_list = path_list
 
         # Create a grid layout
-        self.grid_layout = GridLayout(args)
+        self.file_seq = 0
+        self.grid_layout = GridLayout(self, path_list)
 
         # Create a menubar using the Menubar class
         menubar = Menubar(self)
@@ -39,24 +39,26 @@ class ImageInfoWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
 class GridLayout(QGridLayout):
-    def __init__(self, args):
+    def __init__(self, parent, path_list):
         super().__init__()
+        self.parent = parent
         self.setSpacing(10)
-        self.json_path = args.json_path
+        self.json_path = path_list[1][self.parent.file_seq]
+        self.image_path = path_list[0][self.parent.file_seq]
 
-        self.label_picture = PictureFrame(args.image_path)
+        self.label_picture = PictureFrame(parent)
         self.addWidget(self.label_picture, 0, 0, 4, 1)   # y, x, height, width
         
-        self.dataframe = DataFrame(self, self.json_path)
+        self.dataframe = DataFrame(parent, self.json_path)
         self.addWidget(self.dataframe, 0, 1, 3, 1)
 
         self.modifyframe = ModifyFrame(self, self.json_path)
         self.addWidget(self.modifyframe, 3, 1, 1, 1)
 
 class PictureFrame(QFrame):
-    def __init__(self, image_path):
+    def __init__(self, parent):
         super().__init__()
-
+        self.parent = parent
         self.setFixedSize(1000, 960)
         self.drag_pos = None
         self.zoom_factor = 1.0
@@ -71,10 +73,11 @@ class PictureFrame(QFrame):
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
-        self.im = QPixmap(image_path)
-        self.scene = QGraphicsScene(self)
-        self.scene.addPixmap(self.im)
-        self.view.setScene(self.scene)
+        self.load_image()
+        # self.im = QPixmap(image_path)
+        # self.scene = QGraphicsScene(self)
+        # self.scene.addPixmap(self.im)
+        # self.view.setScene(self.scene)
 
         # Create zoom in and zoom out buttons
         self.zoom_in_button = QPushButton("+", self)
@@ -92,7 +95,13 @@ class PictureFrame(QFrame):
         # Connect the buttons to the zoom functions
         self.zoom_in_button.clicked.connect(self.zoom_in)
         self.zoom_out_button.clicked.connect(self.zoom_out)
-    
+
+    def load_image(self):
+        self.im = QPixmap(self.parent.path_list[0][self.parent.file_seq])
+        self.scene = QGraphicsScene(self)
+        self.scene.addPixmap(self.im)
+        self.view.setScene(self.scene)
+
     def zoom_in(self):
         self.view.scale(1.2, 1.2)
 
@@ -106,18 +115,23 @@ class DataFrame(QFrame):
         self.json_path = json_path
 
         self.setStyleSheet("background-color:darkgrey")
-
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
+        self.tables = [MyTable(self.parent) for i in range(5)]
+        self.load_in()
+        self.setLayout(self.DataFrame_Layout)
 
-        self.readfile(self.json_path)
+
+    def load_in(self):
+        
+        self.readfile(self.parent.path_list[1][self.parent.file_seq])
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
-        symbol_list_SF = ['S', 'S', 'S', 'AL', 'AR', 'A', 'C']
+        # symbol_list_SF = ['S', 'S', 'S', 'AL', 'AR', 'A', 'C']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
-        
         self.threshold = []
         self.threshold_SF = [['Both S'], ['AL'], ['AR'], ['Both C'], ['Both A'], ['Left S'], ['Right S'], ['Left C'], ['Right C'], ['Left A'], ['Right A']]
-       
+        
+        
        # Handle normal data input
         set_l = 0
         set_r = 0
@@ -200,20 +214,20 @@ class DataFrame(QFrame):
                 'Sound Field']
 
         # Normal PTA Table
-        self.tables = [MyTable(self.parent, [], [], 0) for i in range(5)]
+        
         for i in range(5):
-            title_i = QLabel(self.title[i])
-            title_i.setFont(QFont('Arial', 10, QFont.Bold))
             if(i == 4): # SoundField table is bigger
-                self.tables[i].__init__(self.parent, self.freq, self.threshold_SF, i)
+                self.tables[i].update(self.freq, self.threshold_SF, i)
             else:
-                self.tables[i].__init__(self.parent, self.freq, self.threshold[i*2:i*2+2], i)
+                self.tables[i].update(self.freq, self.threshold[i*2:i*2+2], i)
             self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
-
-            self.DataFrame_Layout.addWidget(title_i)
-            self.DataFrame_Layout.addWidget(self.tables[i])
-
-        self.setLayout(self.DataFrame_Layout)
+            if(self.parent.file_seq == 0):
+                title_i = QLabel(self.title[i])
+                title_i.setFont(QFont('Arial', 10, QFont.Bold))
+                self.DataFrame_Layout.addWidget(title_i)
+                self.DataFrame_Layout.addWidget(self.tables[i])
+            else:
+                self.DataFrame_Layout.insertWidget(i*2+1, self.tables[i])
 
     def readfile(self, file):
                                 # L R
@@ -243,8 +257,8 @@ class DataFrame(QFrame):
                 self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
 
     def update_Table(self, json_path, type, side, freq, response, value):
-        self.parent.json_path = json_path
-        self.readfile(self.parent.json_path)
+        self.parent.grid_layout.json_path = json_path
+        self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
         item.setTextAlignment(Qt.AlignCenter)
@@ -256,11 +270,12 @@ class DataFrame(QFrame):
         
 
 class MyTable(QTableWidget):
-    def __init__(self, parent, freq, threshold, which_table):
+    def __init__(self, parent):
         super().__init__()
         self.parent = parent
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
+    def update(self, freq, threshold, which_table):
         self.which_table = which_table
         match self.which_table:
             case 0:
@@ -316,37 +331,37 @@ class MyTable(QTableWidget):
                 case 2 : SF_combo = 'AR'
                 case 3 | 7 | 8 : SF_combo = 'COCHLEAR_IMPLANT'
                 case 4 | 9 | 10 : SF_combo = 'HEARING_AID'
-            self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(SF_combo)) # type
-            self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Both' if row == 0 or row == 3 or row == 4 \
+            self.parent.grid_layout.modifyframe.combo1.setCurrentIndex(self.parent.grid_layout.modifyframe.combo1.findText(SF_combo)) # type
+            self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Both' if row == 0 or row == 3 or row == 4 \
                 else ('Left' if row == 1 or row == 5 or row == 7 or row == 9 else'Right'))) # ear
-            self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+            self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
-            for ear, freq, threshold, response, measurementtype in self.parent.dataframe.data_sf:
-                if self.parent.dataframe.freq[column-1] == str(freq):
+            for ear, freq, threshold, response, measurementtype in self.parent.grid_layout.dataframe.data_sf:
+                if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'both' and measurementtype == 'SOUND_FIELD') or \
                     (row == 1 and ear == 'left' and measurementtype == 'AL') or (row == 1 and ear == 'right' and measurementtype == 'AR')or \
                     (row == 1 and ear == 'both' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'both' and measurementtype == 'HEARING_AID')or \
                     (row == 1 and ear == 'left' and measurementtype == 'SOUND_FIELD') or (row == 1 and ear == 'right' and measurementtype == 'SOUND_FIELD')or \
                     (row == 1 and ear == 'left' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'right' and measurementtype == 'COCHLEAR_IMPLANT')or \
                     (row == 1 and ear == 'left' and measurementtype == 'HEARING_AID') or (row == 1 and ear == 'right' and measurementtype == 'HEARING_AID'):
-                        self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
+                        self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(self.parent.grid_layout.modifyframe.combo4.findText(str(response))) # response
                         found = True
             if found == False:
-                        self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
-            self.parent.modifyframe.input_line1.setText(content)
+                        self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(0) # response empty blank
+            self.parent.grid_layout.modifyframe.input_line1.setText(content)
         else:
-            self.parent.modifyframe.combo1.setCurrentIndex(self.parent.modifyframe.combo1.findText(self.table)) # type
-            self.parent.modifyframe.combo2.setCurrentIndex(self.parent.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
-            self.parent.modifyframe.combo3.setCurrentIndex(self.parent.modifyframe.combo3.findText(self.parent.dataframe.freq[column-1])) # frequency
+            self.parent.grid_layout.modifyframe.combo1.setCurrentIndex(self.parent.grid_layout.modifyframe.combo1.findText(self.table)) # type
+            self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
+            self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
-            for ear, freq, threshold, response in self.parent.dataframe.all_list[self.which_table]:
-                if self.parent.dataframe.freq[column-1] == str(freq):
+            for ear, freq, threshold, response in self.parent.grid_layout.dataframe.all_list[self.which_table]:
+                if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'left') or(row == 1 and ear == 'right'):
-                        self.parent.modifyframe.combo4.setCurrentIndex(self.parent.modifyframe.combo4.findText(str(response))) # response
+                        self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(self.parent.grid_layout.modifyframe.combo4.findText(str(response))) # response
                         found = True
             if found == False:
-                        self.parent.modifyframe.combo4.setCurrentIndex(0) # response empty blank
-        self.parent.modifyframe.input_line1.setText(content)
+                        self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(0) # response empty blank
+        self.parent.grid_layout.modifyframe.input_line1.setText(content)
 
 class ModifyFrame(QFrame):
     def __init__(self, parent, json_path):
@@ -492,7 +507,7 @@ class ModifyFrame(QFrame):
         value = self.input_line1.text()
         name  = self.input_line2.text()
         print(f'The value you input is {value}, and your name is {name}')
-        print(f'The file you are modifying is {self.json_path}')
+        print(f'The file you are modifying is {self.parent.json_path}') # grid_layout.json_path
         print(f'The saving file is {self.new_file}')
         # [' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
         #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
@@ -611,7 +626,11 @@ class ModifyFrame(QFrame):
         
         #Write to a new json file
         df = pd.read_json(self.parent.json_path)
-
+        if(self.parent.json_path != self.new_file):
+            for i in range(df.shape[0]):
+                df.loc[i, 'Version'] = "Original"
+                df.loc[i, 'Modify_by'] = "Original"
+                df.loc[i, 'Modify_Time'] = "Original"
         exist = 0
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
@@ -626,12 +645,6 @@ class ModifyFrame(QFrame):
             self.input_save["Frequency"], int(value), self.input_save["Response"],\
             int(self.version), name, str(datetime.now())]
             df.loc[len(df)] = new_insert
-        
-        for i in range(df.shape[0]):
-            if(pd.isnull(df.iloc[i]["Version"])):
-                df.loc[i, 'Version'] = "Original"
-                df.loc[i, 'Modify_by'] = "Original"
-                df.loc[i, 'Modify_Time'] = "Original"
 
         new_file_content = df.to_json(orient='records', indent=4)
         
@@ -641,9 +654,10 @@ class ModifyFrame(QFrame):
         self.parent.dataframe.update_Table(self.new_file, change_type, self.input_save["Side"], self.input_save["Frequency"], self.input_save["Response"], value)
         
     def get_file_version(self):
+        print(self.parent.json_path)
         self.version = 1
         while True:
-            self.new_file = f"{os.path.splitext(self.json_path)[0]}_v{self.version}.json"
+            self.new_file = f"{os.path.splitext(self.parent.json_path)[0]}_v{self.version}.json"
             if not os.path.exists(self.new_file):
                 break
             self.version += 1
@@ -651,7 +665,7 @@ class ModifyFrame(QFrame):
 class Menubar(QMenuBar):
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.parent = parent
         #set the font size of menubar
         font = QFont()
         font.setPointSize(16)
@@ -659,47 +673,47 @@ class Menubar(QMenuBar):
 
         # Add a "File" menu to the menubar
         file_menu = self.addMenu('File')
-        next_menu = self.addMenu('Next')
 
-        # Add a "New" action to the "File" menu
-        new_action = QAction('New', self)
-        file_menu.addAction(new_action)
+        next_action = QAction('Next', self)
+        next_action.triggered.connect(self.loadNextFile)
+        file_menu.addAction(next_action)
 
-        # Add a "Open" action to the "File" menu
-        open_action = QAction('Open', self)
-        file_menu.addAction(open_action)
-
-        # Add a "Save" action to the "File" menu
-        save_action = QAction('Save', self)
-        file_menu.addAction(save_action)
-
+    def loadNextFile(self):
+        self.parent.file_seq = self.parent.file_seq + 1
+        self.parent.grid_layout.label_picture.load_image()
+        self.parent.grid_layout.dataframe.load_in()
+        self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
+        self.parent.grid_layout.modifyframe.get_file_version()
+        
 def check_path_valid(input_path):
     file_names = []
     if os.path.isfile(input_path):
-        file_names.append(os.path.basename(input_path))
+        file_names.append(input_path)
     elif os.path.exists(input_path):
         for file_name in os.listdir(input_path):
-            file_names.append(file_name)
+            file_names.append(os.path.join(input_path, file_name))
     else:
         raise FileNotFoundError(f"File or folder not found: {input_path}  !\nThe program might crash later !")
+    
+    return file_names
         
 
 def main():
     parser = argparse.ArgumentParser(description='The following is the arguments of this application')
-    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './example/example_PTA_2.jpg')
-    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './example/example_PTA_2.json')
+    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './example_image/example_PTA_2.jpg')
+    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './example_json/example_PTA_2.json')
     args = parser.parse_args()
     
     try:
-        check_path_valid(args.image_path)
-        check_path_valid(args.json_path)
+        image_path = check_path_valid(args.image_path)
+        json_path = check_path_valid(args.json_path)
     except FileNotFoundError as e:
         print(e)
         input("Press Enter to continue...")
     
     # print(sys.argv) # ['pyQT_data_checker.py']
     app = QApplication(sys.argv)
-    window = ImageInfoWindow(args)
+    window = ImageInfoWindow([image_path, json_path])
     window.show()
     # window.resize(1920, 1080) # comments this line when using windows
 
