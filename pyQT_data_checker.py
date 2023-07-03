@@ -126,10 +126,9 @@ class DataFrame(QFrame):
         self.readfile(self.parent.path_list[1][self.parent.file_seq])
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
-        # symbol_list_SF = ['S', 'S', 'S', 'AL', 'AR', 'A', 'C']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         self.threshold = []
-        self.threshold_SF = [['Both S'], ['AL'], ['AR'], ['Both C'], ['Both A'], ['Left S'], ['Right S'], ['Left C'], ['Right C'], ['Left A'], ['Right A']]
+        self.threshold_SF = [['Both S'], ['AL'], ['AR'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
         
         
        # Handle normal data input
@@ -154,8 +153,8 @@ class DataFrame(QFrame):
                     threshold_tmep_r.append('')
                 set_l = 0
                 set_r = 0
-            self.threshold.append(threshold_tmep_l)
             self.threshold.append(threshold_tmep_r)
+            self.threshold.append(threshold_tmep_l)
         
         
         # Handle SoundField data input
@@ -182,27 +181,27 @@ class DataFrame(QFrame):
                     self.threshold_SF[4].append(j[2])
                     SF_set[4] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
                     self.threshold_SF[5].append(j[2])
                     SF_set[5] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
                     self.threshold_SF[6].append(j[2])
                     SF_set[6] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[7].append(j[2])
                     SF_set[7] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[8].append(j[2])
                     SF_set[8] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
                     self.threshold_SF[9].append(j[2])
                     SF_set[9] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
                     self.threshold_SF[10].append(j[2])
                     SF_set[10] = 1
                     continue
@@ -577,23 +576,23 @@ class ModifyFrame(QFrame):
             elif self.input_save["Side"] == 'Right':
                 ear = 'right'
                 change_type = 10
-        elif self.input_save["Type"] == 'AL':
-            change_type = 5
-            conduction = "air"
-            masking = False
-            measurementType = 'AL'
-            if self.input_save["Side"] == 'Left':
-                ear = 'left'
-            else:
-                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
-                return
         elif self.input_save["Type"] == 'AR':
-            change_type = 6
+            change_type = 5
             conduction = "air"
             masking = False
             measurementType = 'AR'
             if self.input_save["Side"] == 'Right':
                 ear = 'right'
+            else:
+                QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
+                return
+        elif self.input_save["Type"] == 'AL':
+            change_type = 6
+            conduction = "air"
+            masking = False
+            measurementType = 'AL'
+            if self.input_save["Side"] == 'Left':
+                ear = 'left'
             else:
                 QMessageBox.warning(None, 'Wrong Type', f'You can not choose {self.input_save["Side"]} for {self.input_save["Type"]}!')
                 return
@@ -604,11 +603,11 @@ class ModifyFrame(QFrame):
             if self.input_save["Side"] == 'Both':
                 ear = 'both'
                 change_type = 7
-            elif self.input_save["Side"] == 'Left':
-                ear = 'left'
-                change_type = 11
             elif self.input_save["Side"] == 'Right':
                 ear = 'right'
+                change_type = 11
+            elif self.input_save["Side"] == 'Left':
+                ear = 'left'
                 change_type = 12
         elif self.input_save["Type"] == 'HEARING_AID':
             conduction = "air"
@@ -617,11 +616,11 @@ class ModifyFrame(QFrame):
             if self.input_save["Side"] == 'Both':
                 ear = 'both'
                 change_type = 8
-            elif self.input_save["Side"] == 'Left':
-                ear = 'left'
-                change_type = 13
             elif self.input_save["Side"] == 'Right':
                 ear = 'right'
+                change_type = 13
+            elif self.input_save["Side"] == 'Left':
+                ear = 'left'
                 change_type = 14
         
         #Write to a new json file
@@ -679,6 +678,9 @@ class Menubar(QMenuBar):
         file_menu.addAction(next_action)
 
     def loadNextFile(self):
+        if(self.parent.file_seq == len(self.parent.path_list[1])-1):
+            QMessageBox.information(None, 'Reach last file', f'This is the last file in this folder!')
+            return
         self.parent.file_seq = self.parent.file_seq + 1
         self.parent.grid_layout.label_picture.load_image()
         self.parent.grid_layout.dataframe.load_in()
