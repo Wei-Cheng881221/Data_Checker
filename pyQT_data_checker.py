@@ -128,7 +128,7 @@ class DataFrame(QFrame):
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         self.threshold = []
-        self.threshold_SF = [['Both S'], ['AL'], ['AR'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
+        self.threshold_SF = [['Both S'],['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
         
         
        # Handle normal data input
@@ -165,11 +165,11 @@ class DataFrame(QFrame):
                     self.threshold_SF[0].append(j[2])
                     SF_set[0] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
                     self.threshold_SF[1].append(j[2])
                     SF_set[1] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
                     self.threshold_SF[2].append(j[2])
                     SF_set[2] = 1
                     continue
@@ -255,18 +255,23 @@ class DataFrame(QFrame):
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == False):
                 self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
 
-    def update_Table(self, json_path, type, side, freq, response, value):
+    def update_Table(self, json_path, which_type, side, freq_1, response, value):
         self.parent.grid_layout.json_path = json_path
         self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
         item.setTextAlignment(Qt.AlignCenter)
-        index = self.freq.index(freq)
-        if(type >= 4):
-            self.tables[type].setItem(type-4, index+1, item)
+        index = self.freq.index(freq_1)
+        if(which_type >= 4):
+            self.tables[4].setItem(which_type-4, index+1, item)
         else:
-            self.tables[type].setItem(0 if side == 'Left' else 1, index+1, item)
-        
+            self.tables[which_type].setItem(0 if side == 'Right' else 1, index+1, item)
+            # print(self.parent.grid_layout.dataframe.all_list[which_type])
+            for i, (ear, freq_2, _, _) in enumerate(self.parent.grid_layout.dataframe.all_list[which_type]):
+                if ((ear == 'left' and side == 'Left') or (ear == 'right' and side == 'Right')) and int(freq_1) == freq_2:
+                    # print(self.parent.grid_layout.dataframe.all_list[which_type][i])
+                    self.parent.grid_layout.dataframe.all_list[which_type][i][3] = bool(response) if response == 'True' or response == 'False' else ' '
+                    # print(self.parent.grid_layout.dataframe.all_list[which_type][i])
 
 class MyTable(QTableWidget):
     def __init__(self, parent):
@@ -326,23 +331,23 @@ class MyTable(QTableWidget):
         if(self.which_table == 4):
             match row:
                 case 0 | 5 | 6 : SF_combo = 'SOUND_FIELD'
-                case 1 : SF_combo = 'AL'
-                case 2 : SF_combo = 'AR'
+                case 1 : SF_combo = 'AR'
+                case 2 : SF_combo = 'AL'
                 case 3 | 7 | 8 : SF_combo = 'COCHLEAR_IMPLANT'
                 case 4 | 9 | 10 : SF_combo = 'HEARING_AID'
             self.parent.grid_layout.modifyframe.combo1.setCurrentIndex(self.parent.grid_layout.modifyframe.combo1.findText(SF_combo)) # type
             self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Both' if row == 0 or row == 3 or row == 4 \
-                else ('Left' if row == 1 or row == 5 or row == 7 or row == 9 else'Right'))) # ear
+                else ('Left' if row == 2 or row == 6 or row == 8 or row == 10 else'Right'))) # ear
             self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
             for ear, freq, threshold, response, measurementtype in self.parent.grid_layout.dataframe.data_sf:
                 if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'both' and measurementtype == 'SOUND_FIELD') or \
-                    (row == 1 and ear == 'left' and measurementtype == 'AL') or (row == 1 and ear == 'right' and measurementtype == 'AR')or \
-                    (row == 1 and ear == 'both' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'both' and measurementtype == 'HEARING_AID')or \
-                    (row == 1 and ear == 'left' and measurementtype == 'SOUND_FIELD') or (row == 1 and ear == 'right' and measurementtype == 'SOUND_FIELD')or \
-                    (row == 1 and ear == 'left' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 1 and ear == 'right' and measurementtype == 'COCHLEAR_IMPLANT')or \
-                    (row == 1 and ear == 'left' and measurementtype == 'HEARING_AID') or (row == 1 and ear == 'right' and measurementtype == 'HEARING_AID'):
+                    (row == 1 and ear == 'right' and measurementtype == 'AR')or (row == 2 and ear == 'left' and measurementtype == 'AL') or \
+                    (row == 3 and ear == 'both' and measurementtype == 'COCHLEAR_IMPLANT') or (row == 4 and ear == 'both' and measurementtype == 'HEARING_AID')or \
+                    (row == 5 and ear == 'right' and measurementtype == 'SOUND_FIELD')or (row == 6 and ear == 'left' and measurementtype == 'SOUND_FIELD') or \
+                    (row == 7 and ear == 'right' and measurementtype == 'COCHLEAR_IMPLANT')or (row == 8 and ear == 'left' and measurementtype == 'COCHLEAR_IMPLANT') or \
+                    (row == 9 and ear == 'right' and measurementtype == 'HEARING_AID') or (row == 10 and ear == 'left' and measurementtype == 'HEARING_AID'):
                         self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(self.parent.grid_layout.modifyframe.combo4.findText(str(response))) # response
                         found = True
             if found == False:
@@ -350,12 +355,13 @@ class MyTable(QTableWidget):
             self.parent.grid_layout.modifyframe.input_line1.setText(content)
         else:
             self.parent.grid_layout.modifyframe.combo1.setCurrentIndex(self.parent.grid_layout.modifyframe.combo1.findText(self.table)) # type
-            self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Left' if row == 0 else 'Right')) # ear
+            self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Left' if row == 1 else 'Right')) # ear
             self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
+            # print(self.parent.grid_layout.dataframe.all_list[self.which_table])
             for ear, freq, threshold, response in self.parent.grid_layout.dataframe.all_list[self.which_table]:
                 if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
-                    if (row == 0 and ear == 'left') or(row == 1 and ear == 'right'):
+                    if (row == 0 and ear == 'right') or(row == 1 and ear == 'left'):
                         self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(self.parent.grid_layout.modifyframe.combo4.findText(str(response))) # response
                         found = True
             if found == False:
@@ -385,7 +391,7 @@ class ModifyFrame(QFrame):
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         self.combo1 = QComboBox()
         self.combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
-            'SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
+            'SOUND_FIELD', 'AR', 'AL', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
         self.combo1.setFont(QFont('Arial', 12))
         ModifyFrame_Up_Layout.addWidget(self.combo1, 0, 1, 1, 3)
@@ -511,6 +517,9 @@ class ModifyFrame(QFrame):
         # [' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
         #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
         measurementType = None
+        ear = None
+        conduction = None
+        masking = None
         if self.input_save["Type"] == 'Air with masking':
             change_type = 1 # which table
             conduction = "air"
@@ -623,6 +632,10 @@ class ModifyFrame(QFrame):
                 ear = 'left'
                 change_type = 14
         
+        #if no modify and press then return
+        if ear == None and conduction == None and masking == None:
+            QMessageBox.information(None, 'Empty Input', 'You did not choose or input anything !')
+            return
         #Write to a new json file
         df = pd.read_json(self.parent.json_path)
         if(self.parent.json_path != self.new_file):
@@ -633,8 +646,13 @@ class ModifyFrame(QFrame):
         exist = 0
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
-                df.loc[i, 'threshold'] = int(value)
-                df.loc[i, 'response'] = self.input_save["Response"]
+                if(value == '' or 'None'):
+                    df.loc[i, 'threshold'] = None
+                    df.loc[i, 'response'] = None
+                    self.input_save["Response"] = ' '
+                else:
+                    df.loc[i, 'threshold'] = int(value)
+                    df.loc[i, 'response'] = self.input_save["Response"]
                 df.loc[i, 'Version'] = int(self.version)
                 df.loc[i, 'Modify_by'] = name
                 df.loc[i, 'Modify_Time'] = str(datetime.now())
@@ -644,7 +662,7 @@ class ModifyFrame(QFrame):
             self.input_save["Frequency"], int(value), self.input_save["Response"],\
             int(self.version), name, str(datetime.now())]
             df.loc[len(df)] = new_insert
-
+        
         new_file_content = df.to_json(orient='records', indent=4)
         
         with open(self.new_file, 'w') as file:
@@ -709,10 +727,15 @@ def main():
     try:
         image_path = check_path_valid(args.image_path)
         json_path = check_path_valid(args.json_path)
-    except FileNotFoundError as e:
-        print(e)
+        if(len(image_path) != len(json_path)):
+            print('=================')
+            print('Check your folder!\nYour input json folder and image folder has different amount of files !\nThis is gonna cause error!')
+            print('=================')
+            # QMessageBox.warning(None, 'Check your folder!', f'Your input json folder and image folder has different amount of files !\nThis is gonna cause error!')
+            return
+    except FileNotFoundError as fnfe:
+        print(fnfe)
         input("Press Enter to continue...")
-    
     # print(sys.argv) # ['pyQT_data_checker.py']
     app = QApplication(sys.argv)
     window = ImageInfoWindow([image_path, json_path])
