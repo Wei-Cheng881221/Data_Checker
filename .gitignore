@@ -3,6 +3,7 @@ try/
 example/
 example_json/
 example_image/
+test/
 
 # files
 new_app_concept.py

@@ -97,6 +97,7 @@ class PictureFrame(QFrame):
         self.zoom_out_button.clicked.connect(self.zoom_out)
 
     def load_image(self):
+        print(self.parent.path_list[0][self.parent.file_seq])
         self.im = QPixmap(self.parent.path_list[0][self.parent.file_seq])
         self.scene = QGraphicsScene(self)
         self.scene.addPixmap(self.im)
@@ -122,7 +123,7 @@ class DataFrame(QFrame):
 
 
     def load_in(self):
-        
+        print(self.parent.path_list[1][self.parent.file_seq])
         self.readfile(self.parent.path_list[1][self.parent.file_seq])
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
@@ -671,7 +672,6 @@ class ModifyFrame(QFrame):
         self.parent.dataframe.update_Table(self.new_file, change_type, self.input_save["Side"], self.input_save["Frequency"], self.input_save["Response"], value)
         
     def get_file_version(self):
-        print(self.parent.json_path)
         self.version = 1
         while True:
             self.new_file = f"{os.path.splitext(self.parent.json_path)[0]}_v{self.version}.json"
@@ -720,8 +720,8 @@ def check_path_valid(input_path):
 
 def main():
     parser = argparse.ArgumentParser(description='The following is the arguments of this application')
-    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './example_image/example_PTA_2.jpg')
-    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './example_json/example_PTA_2.json')
+    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './open_image')
+    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './open_json')
     args = parser.parse_args()
     
     try:
