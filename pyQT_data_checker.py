@@ -140,8 +140,8 @@ class DataFrame(QFrame):
         set_l = 0
         set_r = 0
         for k in range(len(self.all_list)):
-            response_temp_l = [False]
-            response_temp_r = [False]
+            response_temp_l = ['']
+            response_temp_r = ['']
             threshold_tmep_l = [f'Left   {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
             for i in self.freq:
@@ -287,7 +287,7 @@ class DataFrame(QFrame):
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
         print(response, type(response))
-        if(bool(response) == True):
+        if(bool(response) == False):
             item.setForeground(QBrush(QColor(0, 255, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq_1)
@@ -344,7 +344,7 @@ class MyTable(QTableWidget):
         for j in range(len(threshold)):
             for i in range(len(threshold[0])):
                 item = QTableWidgetItem(str(threshold[j][i]))
-                if(response[j][i] == True):
+                if(response[j][i] == False):
                     item.setForeground(QBrush(QColor(0, 255, 0)))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.setItem(j, i, item)
