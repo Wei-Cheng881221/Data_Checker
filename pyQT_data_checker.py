@@ -133,32 +133,41 @@ class DataFrame(QFrame):
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         self.threshold = []
         self.threshold_SF = [['Both S'],['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
-        
+        self.response = []
+        self.response_SF = [['Both S'],['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
         
        # Handle normal data input
         set_l = 0
         set_r = 0
         for k in range(len(self.all_list)):
+            response_temp_l = [False]
+            response_temp_r = [False]
             threshold_tmep_l = [f'Left   {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
             for i in self.freq:
                 for j in self.all_list[k]:
                     if (i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
+                        response_temp_l.append(j[3])
                         set_l = 1
                         continue
                     if (i == str(j[1]) and str(j[0]) == 'right'):
                         threshold_tmep_r.append(j[2])
+                        response_temp_r.append(j[3])
                         set_r = 1
                         continue
                 if set_l == 0:
                     threshold_tmep_l.append('')
+                    response_temp_l.append('')
                 if set_r == 0:
                     threshold_tmep_r.append('')
+                    response_temp_r.append('')
                 set_l = 0
                 set_r = 0
             self.threshold.append(threshold_tmep_r)
             self.threshold.append(threshold_tmep_l)
+            self.response.append(response_temp_r)
+            self.response.append(response_temp_l)
         
         
         # Handle SoundField data input
@@ -167,51 +176,64 @@ class DataFrame(QFrame):
             for j in self.data_sf:
                 if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'SOUND_FIELD'):
                     self.threshold_SF[0].append(j[2])
+                    self.response_SF[0].append(j[3])
                     SF_set[0] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
                     self.threshold_SF[1].append(j[2])
+                    self.response_SF[1].append(j[3])
                     SF_set[1] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
                     self.threshold_SF[2].append(j[2])
+                    self.response_SF[2].append(j[3])
                     SF_set[2] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[3].append(j[2])
+                    self.response_SF[3].append(j[3])
                     SF_set[3] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'HEARING_AID'):
                     self.threshold_SF[4].append(j[2])
+                    self.response_SF[4].append(j[3])
                     SF_set[4] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
                     self.threshold_SF[5].append(j[2])
+                    self.response_SF[5].append(j[3])
                     SF_set[5] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
                     self.threshold_SF[6].append(j[2])
+                    self.response_SF[6].append(j[3])
                     SF_set[6] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[7].append(j[2])
+                    self.response_SF[7].append(j[3])
                     SF_set[7] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[8].append(j[2])
+                    self.response_SF[8].append(j[3])
                     SF_set[8] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
                     self.threshold_SF[9].append(j[2])
+                    self.response_SF[9].append(j[3])
                     SF_set[9] = 1
                     continue
                 if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
                     self.threshold_SF[10].append(j[2])
+                    self.response_SF[10].append(j[3])
                     SF_set[10] = 1
                     continue
             for i in range(len(SF_set)):
                 if SF_set[i] == 0:
                     self.threshold_SF[i].append('')
+                    self.response_SF[i].append('')
+
 
         self.title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
                 'Sound Field']
@@ -220,9 +242,9 @@ class DataFrame(QFrame):
         
         for i in range(5):
             if(i == 4): # SoundField table is bigger
-                self.tables[i].update(self.freq, self.threshold_SF, i)
+                self.tables[i].update(self.freq, self.threshold_SF, self.response_SF, i)
             else:
-                self.tables[i].update(self.freq, self.threshold[i*2:i*2+2], i)
+                self.tables[i].update(self.freq, self.threshold[i*2:i*2+2], self.response[i*2:i*2+2], i)
             self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
             if(self.parent.file_seq == 0):
                 title_i = QLabel(self.title[i])
@@ -264,7 +286,9 @@ class DataFrame(QFrame):
         self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
-        # item.setForeground(QBrush(QColor(255, 0, 0)))
+        print(response, type(response))
+        if(bool(response) == True):
+            item.setForeground(QBrush(QColor(0, 255, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq_1)
         if(which_type >= 4):
@@ -281,7 +305,7 @@ class MyTable(QTableWidget):
         self.parent = parent
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-    def update(self, freq, threshold, which_table):
+    def update(self, freq, threshold, response, which_table):
         self.which_table = which_table
         match self.which_table:
             case 0:
@@ -320,6 +344,8 @@ class MyTable(QTableWidget):
         for j in range(len(threshold)):
             for i in range(len(threshold[0])):
                 item = QTableWidgetItem(str(threshold[j][i]))
+                if(response[j][i] == True):
+                    item.setForeground(QBrush(QColor(0, 255, 0)))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.setItem(j, i, item)
                 self.resizeColumnsToContents()
