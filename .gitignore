@@ -4,6 +4,7 @@ example/
 example_json/
 example_image/
 test/
+symbol_test/
 
 # files
 new_app_concept.py

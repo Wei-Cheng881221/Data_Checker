@@ -2,8 +2,8 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy
-from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette
+QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy, QShortcut
+from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette, QKeySequence
 from PyQt5.QtCore import Qt
 import sys
 import json
@@ -27,8 +27,10 @@ class ImageInfoWindow(QMainWindow):
         self.grid_layout = GridLayout(self, path_list)
 
         # Create a menubar using the Menubar class
-        menubar = Menubar(self)
-        self.setMenuBar(menubar)
+        self.menubar = Menubar(self)
+        self.setMenuBar(self.menubar)
+        self.shortcut1 = QShortcut(QKeySequence("Alt+Right"), self)
+        self.shortcut1.activated.connect(self.menubar.loadNextFile)
 
         # Create a central widget and set the grid layout as its layout
         central_widget = QWidget()
@@ -124,6 +126,7 @@ class DataFrame(QFrame):
 
     def load_in(self):
         print(self.parent.path_list[1][self.parent.file_seq])
+        print("==========================")
         self.readfile(self.parent.path_list[1][self.parent.file_seq])
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
@@ -261,18 +264,16 @@ class DataFrame(QFrame):
         self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
+        # item.setForeground(QBrush(QColor(255, 0, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq_1)
         if(which_type >= 4):
             self.tables[4].setItem(which_type-4, index+1, item)
         else:
             self.tables[which_type].setItem(0 if side == 'Right' else 1, index+1, item)
-            # print(self.parent.grid_layout.dataframe.all_list[which_type])
             for i, (ear, freq_2, _, _) in enumerate(self.parent.grid_layout.dataframe.all_list[which_type]):
                 if ((ear == 'left' and side == 'Left') or (ear == 'right' and side == 'Right')) and int(freq_1) == freq_2:
-                    # print(self.parent.grid_layout.dataframe.all_list[which_type][i])
                     self.parent.grid_layout.dataframe.all_list[which_type][i][3] = bool(response) if response == 'True' or response == 'False' else ' '
-                    # print(self.parent.grid_layout.dataframe.all_list[which_type][i])
 
 class MyTable(QTableWidget):
     def __init__(self, parent):
@@ -359,7 +360,6 @@ class MyTable(QTableWidget):
             self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Left' if row == 1 else 'Right')) # ear
             self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
-            # print(self.parent.grid_layout.dataframe.all_list[self.which_table])
             for ear, freq, threshold, response in self.parent.grid_layout.dataframe.all_list[self.which_table]:
                 if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'right') or(row == 1 and ear == 'left'):
@@ -647,7 +647,7 @@ class ModifyFrame(QFrame):
         exist = 0
         for i in range(df.shape[0]):
             if(df.iloc[i]['measurementType'] == measurementType and df.iloc[i]['frequency'] == int(self.input_save["Frequency"])):
-                if(value == '' or 'None'):
+                if(value == '' or value == 'None'):
                     df.loc[i, 'threshold'] = None
                     df.loc[i, 'response'] = None
                     self.input_save["Response"] = ' '
