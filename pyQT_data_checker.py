@@ -286,8 +286,8 @@ class DataFrame(QFrame):
         self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
         item.setBackground(QBrush(QColor(255, 0, 0)))
-        print(response, type(response))
-        if(bool(response) == False):
+        # print(response, bool(response), type(response))
+        if(response == 'False'):
             item.setForeground(QBrush(QColor(0, 255, 0)))
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq_1)
@@ -297,7 +297,7 @@ class DataFrame(QFrame):
             self.tables[which_type].setItem(0 if side == 'Right' else 1, index+1, item)
             for i, (ear, freq_2, _, _) in enumerate(self.parent.grid_layout.dataframe.all_list[which_type]):
                 if ((ear == 'left' and side == 'Left') or (ear == 'right' and side == 'Right')) and int(freq_1) == freq_2:
-                    self.parent.grid_layout.dataframe.all_list[which_type][i][3] = bool(response) if response == 'True' or response == 'False' else ' '
+                    self.parent.grid_layout.dataframe.all_list[which_type][i][3] = bool(response) if response == 'True' else (False if response == 'False' else ' ')
 
 class MyTable(QTableWidget):
     def __init__(self, parent):
@@ -417,7 +417,7 @@ class ModifyFrame(QFrame):
         Label1.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         self.combo1 = QComboBox()
-        self.combo1.addItems([' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
+        self.combo1.addItems([' ', 'Air without masking', 'Air with masking', 'Bone without masking', 'Bone withmasking', \
             'SOUND_FIELD', 'AR', 'AL', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
         self.combo1.setFont(QFont('Arial', 12))
