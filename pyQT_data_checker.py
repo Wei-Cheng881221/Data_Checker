@@ -15,8 +15,6 @@ from datetime import datetime
 class ImageInfoWindow(QMainWindow):
     def __init__(self, path_list):
         super().__init__()
-        # self.image_path = args.image_path
-        # self.json_path = args.json_path
         self.initUI(path_list)
 
     def initUI(self, path_list):
@@ -35,7 +33,6 @@ class ImageInfoWindow(QMainWindow):
         # Create a central widget and set the grid layout as its layout
         central_widget = QWidget()
         central_widget.setLayout(self.grid_layout)
-        # self.setStyleSheet("background-color: #B0E0E6;")
 
         # Set the central widget of the main window
         self.setCentralWidget(central_widget)
@@ -76,10 +73,6 @@ class PictureFrame(QFrame):
         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
         self.load_image()
-        # self.im = QPixmap(image_path)
-        # self.scene = QGraphicsScene(self)
-        # self.scene.addPixmap(self.im)
-        # self.view.setScene(self.scene)
 
         # Create zoom in and zoom out buttons
         self.zoom_in_button = QPushButton("+", self)
@@ -117,7 +110,7 @@ class DataFrame(QFrame):
         self.parent = parent
         self.json_path = json_path
 
-        self.setStyleSheet("background-color:darkgrey")
+        self.setStyleSheet("background-color:white")
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
         self.tables = [MyTable(self.parent) for i in range(5)]
         self.load_in()
@@ -146,12 +139,12 @@ class DataFrame(QFrame):
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
             for i in self.freq:
                 for j in self.all_list[k]:
-                    if (i == str(j[1]) and str(j[0]) == 'left'):
+                    if (not set_l and i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
                         response_temp_l.append(j[3])
                         set_l = 1
                         continue
-                    if (i == str(j[1]) and str(j[0]) == 'right'):
+                    if (not set_r and i == str(j[1]) and str(j[0]) == 'right'):
                         threshold_tmep_r.append(j[2])
                         response_temp_r.append(j[3])
                         set_r = 1
@@ -238,8 +231,7 @@ class DataFrame(QFrame):
         self.title = ['Air without masking', 'Air with masking', 'Bone without masking' , 'Bone with masking', \
                 'Sound Field']
 
-        # Normal PTA Table
-        
+        # show the data in the table
         for i in range(5):
             if(i == 4): # SoundField table is bigger
                 self.tables[i].update(self.freq, self.threshold_SF, self.response_SF, i)
@@ -268,11 +260,12 @@ class DataFrame(QFrame):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
                 self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
             elif(df.iloc[i]['conduction'] == 'air' and df.iloc[i]['masking'] == False):
+                # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
                 if(df.iloc[i]['measurementType'] == 'SOUND_FIELD' or \
                     df.iloc[i]['measurementType'] == 'AL' or \
                     df.iloc[i]['measurementType'] == 'AR' or \
                     df.iloc[i]['measurementType'] == 'COCHLEAR_IMPLANT' or \
-                    df.iloc[i]['measurementType'] == 'HEARING_AID'):   # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
+                    df.iloc[i]['measurementType'] == 'HEARING_AID'):
                     self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6], df.iloc[i]['measurementType']]) # ear, freq, threshold, response, measurementType
                 else:
                     self.data_air_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
@@ -285,10 +278,9 @@ class DataFrame(QFrame):
         self.parent.grid_layout.json_path = json_path
         self.readfile(self.parent.grid_layout.json_path)
         item = QTableWidgetItem(value)
-        item.setBackground(QBrush(QColor(255, 0, 0)))
-        # print(response, bool(response), type(response))
+        item.setBackground(QBrush(QColor(255, 165, 0))) # yellow-orange color
         if(response == 'False'):
-            item.setForeground(QBrush(QColor(0, 255, 0)))
+            item.setForeground(QBrush(QColor(120, 120, 120))) # custom light grey
         item.setTextAlignment(Qt.AlignCenter)
         index = self.freq.index(freq_1)
         if(which_type >= 4):
@@ -304,6 +296,10 @@ class MyTable(QTableWidget):
         super().__init__()
         self.parent = parent
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setStyleSheet(
+            "QTableView { border: 2px solid black; gridline-color: black; background-color: lightblue; }"
+            "QHeaderView::section { border-bottom: 1px solid black; background-color: red; }"
+        )
 
     def update(self, freq, threshold, response, which_table):
         self.which_table = which_table
@@ -334,6 +330,9 @@ class MyTable(QTableWidget):
         
         header = self.horizontalHeader()
         header.setFont(font)
+        custom_color = QColor(211, 211, 211)  # RGB values for light gray
+        lighter_color = custom_color.lighter(150)  # Adjust the brightness (150 here)
+        header.setStyleSheet("QHeaderView::section { background-color: %s }" % lighter_color.name())
 
         # Set row header (threshold)
         self.setVerticalHeaderLabels(['threshold'])
@@ -345,7 +344,7 @@ class MyTable(QTableWidget):
             for i in range(len(threshold[0])):
                 item = QTableWidgetItem(str(threshold[j][i]))
                 if(response[j][i] == False):
-                    item.setForeground(QBrush(QColor(0, 255, 0)))
+                    item.setForeground(QBrush(QColor(120, 120, 120)))
                 item.setTextAlignment(Qt.AlignCenter)
                 self.setItem(j, i, item)
                 self.resizeColumnsToContents()
@@ -353,7 +352,6 @@ class MyTable(QTableWidget):
     def handle_cell_clicked(self, row, column):
         # Retrieve the content of the clicked cell
         item = self.item(row, column)
-        # content = item.text()
         content = "None" if item.text() == '' else item.text()
         
         if(self.which_table == 4):
@@ -488,37 +486,6 @@ class ModifyFrame(QFrame):
         self.Modify_Down_Frame.setLayout(ModifyFrame_Down_Layout)
 
         ###################################################
-        # This part is not using right now
-        self.length = pd.read_json(self.json_path).shape[0]
-
-        self.Modify_Check_Frame = QFrame()
-        ModifyFrame_Check_Layout = QGridLayout()
-
-        Label_detect_amount = QLabel(f"Detected amount of symblos : ")
-        Label_detect_amount.setFont(QFont('Arial', 12))
-        ModifyFrame_Check_Layout.addWidget(Label_detect_amount, 0, 1, 1, 1)  # y, x, height, width
-
-        self.input_line3 = QLineEdit(self.Modify_Check_Frame)
-        self.input_line3.setFont(QFont('Arial', 12))
-        self.input_line3.setText(f'{self.length}')
-        ModifyFrame_Check_Layout.addWidget(self.input_line3, 0, 2, 1, 1)
-
-        Label_real_amoount = QLabel("Please input the real amount base on the picture left : ")
-        Label_real_amoount.setFont(QFont('Arial', 12))
-        ModifyFrame_Check_Layout.addWidget(Label_real_amoount, 0, 3, 1, 1)
-
-        self.input_line4 = QLineEdit(self.Modify_Check_Frame)
-        self.input_line4.setFont(QFont('Arial', 12))
-        ModifyFrame_Check_Layout.addWidget(self.input_line4, 0, 4, 1, 1)
-
-        Submit_BTN = QPushButton(self.Modify_Down_Frame)
-        Submit_BTN.setText('新增統計資料')
-
-        ModifyFrame_Check_Layout.addWidget(Submit_BTN, 0, 6, 1, 1)
-
-        self.Modify_Check_Frame.setLayout(ModifyFrame_Check_Layout)
-
-        ###################################################
 
         ModifyFrame_Layout.addWidget(self.Modify_Up_Frame)
         ModifyFrame_Layout.addWidget(self.Modify_Down_Frame)
@@ -541,8 +508,6 @@ class ModifyFrame(QFrame):
         print(f'The value you input is {value}, and your name is {name}')
         print(f'The file you are modifying is {self.parent.json_path}') # grid_layout.json_path
         print(f'The saving file is {self.new_file}')
-        # [' ', 'Air with masking', 'Air without masking', 'Bone with masking', 'Bone without masking', \
-        #     'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID']
         measurementType = None
         ear = None
         conduction = None
@@ -663,6 +628,7 @@ class ModifyFrame(QFrame):
         if ear == None and conduction == None and masking == None:
             QMessageBox.information(None, 'Empty Input', 'You did not choose or input anything !')
             return
+        
         #Write to a new json file
         df = pd.read_json(self.parent.json_path)
         if(self.parent.json_path != self.new_file):
@@ -694,6 +660,7 @@ class ModifyFrame(QFrame):
         
         with open(self.new_file, 'w') as file:
             file.write(new_file_content)
+
         #load new file
         self.parent.dataframe.update_Table(self.new_file, change_type, self.input_save["Side"], self.input_save["Frequency"], self.input_save["Response"], value)
         
@@ -757,12 +724,11 @@ def main():
             print('=================')
             print('Check your folder!\nYour input json folder and image folder has different amount of files !\nThis is gonna cause error!')
             print('=================')
-            # QMessageBox.warning(None, 'Check your folder!', f'Your input json folder and image folder has different amount of files !\nThis is gonna cause error!')
             return
     except FileNotFoundError as fnfe:
         print(fnfe)
         input("Press Enter to continue...")
-    # print(sys.argv) # ['pyQT_data_checker.py']
+
     app = QApplication(sys.argv)
     window = ImageInfoWindow([image_path, json_path])
     window.show()
