@@ -27,8 +27,14 @@ class ImageInfoWindow(QMainWindow):
         # Create a menubar using the Menubar class
         self.menubar = Menubar(self)
         self.setMenuBar(self.menubar)
+        
+        #keyboard shortcut for next file
         self.shortcut1 = QShortcut(QKeySequence("Alt+Right"), self)
         self.shortcut1.activated.connect(self.menubar.loadNextFile)
+
+        #keyboard shortcut for previous file
+        self.shortcut2 = QShortcut(QKeySequence("Alt+Left"), self)
+        self.shortcut2.activated.connect(self.menubar.loadPrevFile)
 
         # Create a central widget and set the grid layout as its layout
         central_widget = QWidget()
@@ -113,9 +119,9 @@ class DataFrame(QFrame):
         self.setStyleSheet("background-color:white")
         self.DataFrame_Layout = QVBoxLayout(self) #QGridLayout()
         self.tables = [MyTable(self.parent) for i in range(5)]
+        self.first_time = True
         self.load_in()
         self.setLayout(self.DataFrame_Layout)
-
 
     def load_in(self):
         print(self.parent.path_list[1][self.parent.file_seq])
@@ -238,7 +244,8 @@ class DataFrame(QFrame):
             else:
                 self.tables[i].update(self.freq, self.threshold[i*2:i*2+2], self.response[i*2:i*2+2], i)
             self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
-            if(self.parent.file_seq == 0):
+            if(self.parent.file_seq == 0 and self.first_time == True):
+                self.first_time = False
                 title_i = QLabel(self.title[i])
                 title_i.setFont(QFont('Arial', 10, QFont.Bold))
                 self.DataFrame_Layout.addWidget(title_i)
@@ -397,6 +404,7 @@ class ModifyFrame(QFrame):
     def __init__(self, parent, json_path):
         super().__init__()
         self.parent = parent
+        self.been_modify = False
 
         self.json_path = json_path
         self.new_file = "NEW FILE"
@@ -630,6 +638,7 @@ class ModifyFrame(QFrame):
             return
         
         #Write to a new json file
+        self.been_modify = True
         df = pd.read_json(self.parent.json_path)
         if(self.parent.json_path != self.new_file):
             for i in range(df.shape[0]):
@@ -688,16 +697,36 @@ class Menubar(QMenuBar):
         next_action.triggered.connect(self.loadNextFile)
         file_menu.addAction(next_action)
 
+        prev_action = QAction('Previous', self)
+        prev_action.triggered.connect(self.loadPrevFile)
+        file_menu.addAction(prev_action)
+
     def loadNextFile(self):
         if(self.parent.file_seq == len(self.parent.path_list[1])-1):
             QMessageBox.information(None, 'Reach last file', f'This is the last file in this folder!')
             return
+        if(self.parent.grid_layout.modifyframe.been_modify):
+            self.parent.path_list[1][self.parent.file_seq] = self.parent.grid_layout.modifyframe.new_file
+            self.parent.grid_layout.modifyframe.been_modify = False
         self.parent.file_seq = self.parent.file_seq + 1
         self.parent.grid_layout.label_picture.load_image()
         self.parent.grid_layout.dataframe.load_in()
         self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
         self.parent.grid_layout.modifyframe.get_file_version()
-        
+
+    def loadPrevFile(self):
+        if(self.parent.file_seq == 0):
+            QMessageBox.information(None, 'Reach First file', f'This is the first file in this folder!')
+            return
+        if(self.parent.grid_layout.modifyframe.been_modify):
+            self.parent.path_list[1][self.parent.file_seq] = self.parent.grid_layout.modifyframe.new_file
+            self.parent.grid_layout.modifyframe.been_modify = False
+        self.parent.file_seq = self.parent.file_seq - 1
+        self.parent.grid_layout.label_picture.load_image()
+        self.parent.grid_layout.dataframe.load_in()
+        self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
+        self.parent.grid_layout.modifyframe.get_file_version()
+
 def check_path_valid(input_path):
     file_names = []
     if os.path.isfile(input_path):
