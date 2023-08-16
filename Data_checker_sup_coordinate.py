@@ -2,12 +2,13 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy, QShortcut
-from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette, QKeySequence
-from PyQt5.QtCore import Qt
+QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy, QShortcut, QGraphicsRectItem
+from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette, QKeySequence, QPen
+from PyQt5.QtCore import Qt, QRect, QRectF
 import sys
 import json
 import pandas as pd
+import numpy as np
 import argparse
 import os 
 from datetime import datetime
@@ -81,29 +82,55 @@ class PictureFrame(QFrame):
         self.load_image()
 
         # Create zoom in and zoom out buttons
-        self.zoom_in_button = QPushButton("+", self)
-        self.zoom_out_button = QPushButton("-", self)
+        # self.zoom_in_button = QPushButton("+", self)
+        # self.zoom_out_button = QPushButton("-", self)
 
         # Create a layout for the buttons and the view
         layout = QVBoxLayout()
         layout.addWidget(self.view)
-        layout.addWidget(self.zoom_in_button)
-        layout.addWidget(self.zoom_out_button)
+        # layout.addWidget(self.zoom_in_button)
+        # layout.addWidget(self.zoom_out_button)
 
         # Set the layout for the frame
         self.setLayout(layout)
 
         # Connect the buttons to the zoom functions
-        self.zoom_in_button.clicked.connect(self.zoom_in)
-        self.zoom_out_button.clicked.connect(self.zoom_out)
+        # self.zoom_in_button.clicked.connect(self.zoom_in)
+        # self.zoom_out_button.clicked.connect(self.zoom_out)
 
     def load_image(self):
         print(self.parent.path_list[0][self.parent.file_seq])
         self.im = QPixmap(self.parent.path_list[0][self.parent.file_seq])
-        self.scene = QGraphicsScene(self)
-        self.scene.addPixmap(self.im)
-        self.view.setScene(self.scene)
+        self.coordinate_info = pd.read_json(self.parent.path_list[1][self.parent.file_seq]).iloc[0]
+        max_scene_width = 1000
+        max_scene_height = 960
+        self.view.resetTransform()
+        if not (self.coordinate_info['ear'] == 'right' or self.coordinate_info['ear'] == 'left' or self.coordinate_info['ear'] == 'both'):
+            x = self.coordinate_info['x coordinate']
+            y = self.coordinate_info['y coordinate']
+            w = self.coordinate_info['weight retio']
+            h = self.coordinate_info['height ratio']
+            cropped_width  = w * self.im.width()
+            cropped_height = h * self.im.height()
+            self.scale_factor = min(max_scene_width / cropped_width, max_scene_height / cropped_height)
+            self.c_im = self.im.copy(int(x * self.im.width() - w * self.im.width() / 2),
+                                     int(y * self.im.height() - h * self.im.height() / 2),
+                                     int(w * self.im.width()),
+                                     int(h * self.im.height()))
+            self.view.scale(self.scale_factor, self.scale_factor)
 
+        self.scene = QGraphicsScene(self)
+        self.scene.addPixmap(self.c_im)
+
+        self.original_rect = QRectF(0,0,0,0)
+        self.rect_item = QGraphicsRectItem(self.original_rect)
+        self.scene.addItem(self.rect_item)
+
+        # self.scene.addPixmap(cropped_pixmap)
+        self.view.setScene(self.scene)
+        # if not (coordinate_info['ear'] == 'right' or coordinate_info['ear'] == 'left' or coordinate_info['ear'] == 'both'):
+            
+        
     def zoom_in(self):
         self.view.scale(1.2, 1.2)
 
@@ -131,101 +158,123 @@ class DataFrame(QFrame):
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         self.threshold = []
-        self.threshold_SF = [['Both S'],['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
+        self.threshold_SF = [['Both S'], ['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
         self.response = []
-        self.response_SF = [['Both S'],['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
-        
+        self.response_SF = [['Both S'], ['AR'],  ['AL'], ['Both C'], ['Both A'], ['Right S'], ['Left S'], ['Right C'], ['Left C'], ['Right A'], ['Left A']]
+        self.bbox = []
+        self.bbox_SF = [[], [], [], [], [], [], [], [], [], [], []]
        # Handle normal data input
         set_l = 0
         set_r = 0
         for k in range(len(self.all_list)):
             response_temp_l = ['']
             response_temp_r = ['']
+            bbox_temp_l = []
+            bbox_temp_r = []
             threshold_tmep_l = [f'Left   {symbol_list[k*2]} ']
             threshold_tmep_r = [f'Right  {symbol_list[k*2+1]} ']
             for i in self.freq:
                 for j in self.all_list[k]:
+                    # ear, freq, threshold, response, bbox
                     if (not set_l and i == str(j[1]) and str(j[0]) == 'left'):
                         threshold_tmep_l.append(j[2])
                         response_temp_l.append(j[3])
+                        bbox_temp_l.append(j[4])
                         set_l = 1
                         continue
                     if (not set_r and i == str(j[1]) and str(j[0]) == 'right'):
                         threshold_tmep_r.append(j[2])
                         response_temp_r.append(j[3])
+                        bbox_temp_r.append(j[4])
                         set_r = 1
                         continue
                 if set_l == 0:
                     threshold_tmep_l.append('')
                     response_temp_l.append('')
+                    bbox_temp_l.append([])
                 if set_r == 0:
                     threshold_tmep_r.append('')
                     response_temp_r.append('')
+                    bbox_temp_r.append([])
                 set_l = 0
                 set_r = 0
             self.threshold.append(threshold_tmep_r)
             self.threshold.append(threshold_tmep_l)
+
             self.response.append(response_temp_r)
             self.response.append(response_temp_l)
-        
+
+            self.bbox.append(bbox_temp_r)
+            self.bbox.append(bbox_temp_l)
         
         # Handle SoundField data input
         for i in self.freq:
             SF_set = [0 for i in range(11)]
             for j in self.data_sf:
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[5] == 'SOUND_FIELD'):
                     self.threshold_SF[0].append(j[2])
                     self.response_SF[0].append(j[3])
+                    self.bbox_SF[0].append(j[4])
                     SF_set[0] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[5] == 'AR'):
                     self.threshold_SF[1].append(j[2])
                     self.response_SF[1].append(j[3])
+                    self.bbox_SF[1].append(j[4])
                     SF_set[1] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[5] == 'AL'):
                     self.threshold_SF[2].append(j[2])
                     self.response_SF[2].append(j[3])
+                    self.bbox_SF[2].append(j[4])
                     SF_set[2] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[5] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[3].append(j[2])
                     self.response_SF[3].append(j[3])
+                    self.bbox_SF[3].append(j[4])
                     SF_set[3] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[5] == 'HEARING_AID'):
                     self.threshold_SF[4].append(j[2])
                     self.response_SF[4].append(j[3])
+                    self.bbox_SF[4].append(j[4])
                     SF_set[4] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[5] == 'SOUND_FIELD'):
                     self.threshold_SF[5].append(j[2])
                     self.response_SF[5].append(j[3])
+                    self.bbox_SF[5].append(j[4])
                     SF_set[5] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[5] == 'SOUND_FIELD'):
                     self.threshold_SF[6].append(j[2])
                     self.response_SF[6].append(j[3])
+                    self.bbox_SF[6].append(j[4])
                     SF_set[6] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[5] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[7].append(j[2])
                     self.response_SF[7].append(j[3])
+                    self.bbox_SF[7].append(j[4])
                     SF_set[7] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[5] == 'COCHLEAR_IMPLANT'):
                     self.threshold_SF[8].append(j[2])
                     self.response_SF[8].append(j[3])
+                    self.bbox_SF[8].append(j[4])
                     SF_set[8] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[5] == 'HEARING_AID'):
                     self.threshold_SF[9].append(j[2])
                     self.response_SF[9].append(j[3])
+                    self.bbox_SF[9].append(j[4])
                     SF_set[9] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[5] == 'HEARING_AID'):
                     self.threshold_SF[10].append(j[2])
                     self.response_SF[10].append(j[3])
+                    self.bbox_SF[10].append(j[4])
                     SF_set[10] = 1
                     continue
             for i in range(len(SF_set)):
@@ -245,7 +294,8 @@ class DataFrame(QFrame):
                 self.tables[i].update(self.freq, self.threshold[i*2:i*2+2], self.response[i*2:i*2+2], i)
             self.tables[i].cellClicked.connect(self.tables[i].handle_cell_clicked)
             if(self.parent.file_seq == 0 and self.first_time == True):
-                self.first_time = False
+                if(i == 4):
+                    self.first_time = False
                 title_i = QLabel(self.title[i])
                 title_i.setFont(QFont('Arial', 10, QFont.Bold))
                 self.DataFrame_Layout.addWidget(title_i)
@@ -262,10 +312,11 @@ class DataFrame(QFrame):
         self.data_sf = []
 
         df = pd.read_json(file)
-
         for i in range(df.shape[0]):
+            # ear, freq, threshold, response, bbox
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
-                self.data_air_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]]) # ear, freq, threshold, response
+                self.data_air_tru.append([df.iloc[i]['ear'], int(df.iloc[i]['frequency']), int(df.iloc[i]['threshold']), bool(df.iloc[i]['response']), \
+                                         [df.iloc[i]['x coordinate'], df.iloc[i]['y coordinate'], df.iloc[i]['weight retio'], df.iloc[i]['height ratio']]])
             elif(df.iloc[i]['conduction'] == 'air' and df.iloc[i]['masking'] == False):
                 # handle the extra cases 'SOUND_FIELD', 'NR_SOUND_FIELD', 'AL', 'AR', 'COCHLEAR_IMPLANT', 'HEARING_AID'
                 if(df.iloc[i]['measurementType'] == 'SOUND_FIELD' or \
@@ -273,13 +324,19 @@ class DataFrame(QFrame):
                     df.iloc[i]['measurementType'] == 'AR' or \
                     df.iloc[i]['measurementType'] == 'COCHLEAR_IMPLANT' or \
                     df.iloc[i]['measurementType'] == 'HEARING_AID'):
-                    self.data_sf.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6], df.iloc[i]['measurementType']]) # ear, freq, threshold, response, measurementType
+                    # ear, freq, threshold, response, bbox, measurementType
+                    self.data_sf.append([df.iloc[i]['ear'], int(df.iloc[i]['frequency']), int(df.iloc[i]['threshold']), bool(df.iloc[i]['response']), \
+                                         [df.iloc[i]['x coordinate'], df.iloc[i]['y coordinate'], df.iloc[i]['weight retio'], df.iloc[i]['height ratio']], \
+                                         df.iloc[i]['measurementType']])
                 else:
-                    self.data_air_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
+                    self.data_air_fal.append([df.iloc[i]['ear'], int(df.iloc[i]['frequency']), int(df.iloc[i]['threshold']), bool(df.iloc[i]['response']), \
+                                             [df.iloc[i]['x coordinate'], df.iloc[i]['y coordinate'], df.iloc[i]['weight retio'], df.iloc[i]['height ratio']]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == True):
-                self.data_bon_tru.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
+                self.data_bon_tru.append([df.iloc[i]['ear'], int(df.iloc[i]['frequency']), int(df.iloc[i]['threshold']), bool(df.iloc[i]['response']), \
+                                         [df.iloc[i]['x coordinate'], df.iloc[i]['y coordinate'], df.iloc[i]['weight retio'], df.iloc[i]['height ratio']]])
             elif(df.iloc[i]['conduction'] == 'bone' and df.iloc[i]['masking'] == False):
-                self.data_bon_fal.append([df.iloc[i][0], df.iloc[i][4], df.iloc[i][5], df.iloc[i][6]])
+                self.data_bon_fal.append([df.iloc[i]['ear'], int(df.iloc[i]['frequency']), int(df.iloc[i]['threshold']), bool(df.iloc[i]['response']), \
+                                         [df.iloc[i]['x coordinate'], df.iloc[i]['y coordinate'], df.iloc[i]['weight retio'], df.iloc[i]['height ratio']]])
 
     def update_Table(self, json_path, which_type, side, freq_1, response, value):
         self.parent.grid_layout.json_path = json_path
@@ -373,7 +430,7 @@ class MyTable(QTableWidget):
                 else ('Left' if row == 2 or row == 6 or row == 8 or row == 10 else'Right'))) # ear
             self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
-            for ear, freq, threshold, response, measurementtype in self.parent.grid_layout.dataframe.data_sf:
+            for ear, freq, threshold, response, _, measurementtype in self.parent.grid_layout.dataframe.data_sf:
                 if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'both' and measurementtype == 'SOUND_FIELD') or \
                     (row == 1 and ear == 'right' and measurementtype == 'AR')or (row == 2 and ear == 'left' and measurementtype == 'AL') or \
@@ -391,13 +448,29 @@ class MyTable(QTableWidget):
             self.parent.grid_layout.modifyframe.combo2.setCurrentIndex(self.parent.grid_layout.modifyframe.combo2.findText('Left' if row == 1 else 'Right')) # ear
             self.parent.grid_layout.modifyframe.combo3.setCurrentIndex(self.parent.grid_layout.modifyframe.combo3.findText(self.parent.grid_layout.dataframe.freq[column-1])) # frequency
             found = False
-            for ear, freq, threshold, response in self.parent.grid_layout.dataframe.all_list[self.which_table]:
+            for ear, freq, threshold, response, _ in self.parent.grid_layout.dataframe.all_list[self.which_table]:
                 if self.parent.grid_layout.dataframe.freq[column-1] == str(freq):
                     if (row == 0 and ear == 'right') or(row == 1 and ear == 'left'):
                         self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(self.parent.grid_layout.modifyframe.combo4.findText(str(response))) # response
                         found = True
             if found == False:
                         self.parent.grid_layout.modifyframe.combo4.setCurrentIndex(0) # response empty blank
+            if(len(self.parent.grid_layout.dataframe.bbox[self.which_table*2+row][column-1]) == 4):
+                x, y, w, h = self.parent.grid_layout.dataframe.bbox[self.which_table*2+row][column-1]
+                self.parent.grid_layout.label_picture.scene.removeItem(self.parent.grid_layout.label_picture.rect_item)
+                im = self.parent.grid_layout.label_picture.im
+                c_im = self.parent.grid_layout.label_picture.c_im
+                x = (x * im.width() - int(self.parent.grid_layout.label_picture.coordinate_info['x coordinate'] * im.width() - self.parent.grid_layout.label_picture.coordinate_info['weight retio'] * im.width() / 2))
+                y = (y * im.height() - int(self.parent.grid_layout.label_picture.coordinate_info['y coordinate'] * im.height() - self.parent.grid_layout.label_picture.coordinate_info['height ratio'] * im.height() / 2))
+                w = w * im.width()
+                h = h * im.height()
+
+                x2 = x - w/2
+                y2 = y - h/2
+                print(x, y, w, h)
+                pen = QPen(QColor(0, 255, 0))
+                pen.setWidth(2)
+                self.parent.grid_layout.label_picture.rect_item = self.parent.grid_layout.label_picture.scene.addRect(x2, y2, w, h, pen)
         self.parent.grid_layout.modifyframe.input_line1.setText(content)
 
 class ModifyFrame(QFrame):
