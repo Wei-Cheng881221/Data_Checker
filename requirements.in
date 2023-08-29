@@ -1,3 +1,13 @@
 #requirements
 pandas
 PyQt5
+tqdm
+typing-extensions
+Pillow
+opencv-python
+torch
+torchvision
+torchaudio
+matplotlib
+PyYAML
+scipy
