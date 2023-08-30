@@ -21,7 +21,7 @@ class ImageInfoWindow(QMainWindow):
         self.path_list = path_list
 
         # Create a grid layout
-        self.file_seq = 0
+        self.file_seq = self.read_log(path_list[0], path_list[1])
         self.grid_layout = GridLayout(self, path_list)
 
         # Create a menubar using the Menubar class
@@ -42,6 +42,52 @@ class ImageInfoWindow(QMainWindow):
 
         # Set the central widget of the main window
         self.setCentralWidget(central_widget)
+
+    def read_log(self, image_path, json_path):
+        try:
+            with open("info.json", "r") as file:
+                info_data = json.load(file)
+        except FileNotFoundError:
+            print("File not found.")
+            return 0
+        except json.JSONDecodeError:
+            print("Error decoding JSON.")
+            return None
+
+        if info_data:
+            image_files_old = info_data.get("image_file", [])
+            json_files_old = info_data.get("json_path", [])
+            last_time = info_data.get("last_time", 0)
+
+            if image_files_old == image_path and json_files_old == json_path:
+                return last_time
+            else:
+                return 0
+
+    def write_log(self, last_stop, image_path, json_path):
+
+        output_data = {
+            "image_file" : image_path,
+            "json_path" : json_path,
+            "last_time": last_stop
+        }
+
+        with open("info.json", "w") as output_file:
+            json.dump(output_data, output_file, indent=4)
+
+    def closeEvent(self, event):
+        # This method is called when the window is about to be closed
+        reply = QMessageBox.question(self, "Confirm Exit",
+                                     "Are you sure you want to exit?",
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            # Here you can perform actions or gather information before closing
+            event.accept()
+            self.write_log(self.file_seq, self.path_list[0], self.path_list[1])
+        else:
+            event.ignore()
 
 class GridLayout(QGridLayout):
     def __init__(self, parent, path_list):
@@ -129,7 +175,7 @@ class DataFrame(QFrame):
         print("==========================")
         self.readfile(self.parent.path_list[1][self.parent.file_seq])
         self.all_list = [self.data_air_fal] + [self.data_air_tru] + [self.data_bon_fal] + [self.data_bon_tru]
-        print(self.all_list)
+        # print(self.all_list)
         symbol_list = ['X', 'O', '☐', '△', '>', '<', ']', '[']
         self.freq = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000', '12000']
         self.threshold = []
@@ -263,7 +309,6 @@ class DataFrame(QFrame):
         self.data_bon_tru = []  # ] [
         self.data_bon_fal = []  # > <
         self.data_sf = []
-
         df = pd.read_json(file)
 
         for i in range(df.shape[0]):
@@ -310,6 +355,7 @@ class MyTable(QTableWidget):
             "QTableView { border: 2px solid black; gridline-color: black; background-color: lightblue; }"
             "QHeaderView::section { border-bottom: 1px solid black; background-color: red; }"
         )
+        self.currentCellChanged.connect(self.handle_cell_clicked)
 
     def update(self, freq, threshold, response, which_table):
         self.which_table = which_table
@@ -426,7 +472,7 @@ class ModifyFrame(QFrame):
         Label1.setAlignment(Qt.AlignCenter)
         ModifyFrame_Up_Layout.addWidget(Label1, 0, 0, 1, 1)
         self.combo1 = QComboBox()
-        self.combo1.addItems([' ', 'Air without masking', 'Air with masking', 'Bone without masking', 'Bone withmasking', \
+        self.combo1.addItems([' ', 'Air without masking', 'Air with masking', 'Bone without masking', 'Bone with masking', \
             'SOUND_FIELD', 'AR', 'AL', 'COCHLEAR_IMPLANT', 'HEARING_AID'])
         self.combo1.currentIndexChanged.connect(lambda : self.GetCombo('Type'))
         self.combo1.setFont(QFont('Arial', 12))
@@ -730,33 +776,34 @@ class Menubar(QMenuBar):
         self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
         self.parent.grid_layout.modifyframe.get_file_version()
 
-def check_path_valid(input_path):
-    file_names = []
-    if os.path.isfile(input_path):
-        file_names.append(input_path)
-    elif os.path.exists(input_path):
-        for file_name in os.listdir(input_path):
-            file_names.append(os.path.join(input_path, file_name))
+def check_path_valid(image_path, json_path):
+    image_names = []
+    json_names = []
+    if os.path.isfile(image_path) and os.path.isfile(json_path):
+        file_names.append(image_path)
+        file_names.append(json_path)
+    elif os.path.exists(image_path) and os.path.exists(json_path):
+        jpg_files = [f for f in os.listdir(image_path) if f.endswith(".jpg")]
+
+        for jpg_file in jpg_files:
+            jpg_name_without_extension = os.path.splitext(jpg_file)[0]
+            json_file = jpg_name_without_extension + ".json"
+            if json_file in os.listdir(json_path):
+                json_names.append(os.path.join(json_path, json_file))
+                image_names.append(os.path.join(image_path, jpg_file))
+
     else:
-        raise FileNotFoundError(f"File or folder not found: {input_path}  !\nThe program might crash later !")
-    
-    return file_names
-        
+        raise FileNotFoundError(f"File or folder not found: {image_path} or {json_path}  !\nThe program might crash later !")   
+    return image_names, json_names
 
 def main():
     parser = argparse.ArgumentParser(description='The following is the arguments of this application')
-    parser.add_argument('--image_path', help = "The input path to one image or a folder path of images", default = './open_image')
-    parser.add_argument('--json_path', help = "The input path to one json or a folder path of json", default = './open_json')
+    parser.add_argument("-i", "--image_path", help = "The input path to one image or a folder path of images", default = './open_image')
+    parser.add_argument("-j", "--json_path", help = "The input path to one json or a folder path of json", default = './open_json')
     args = parser.parse_args()
     
     try:
-        image_path = check_path_valid(args.image_path)
-        json_path = check_path_valid(args.json_path)
-        if(len(image_path) != len(json_path)):
-            print('=================')
-            print('Check your folder!\nYour input json folder and image folder has different amount of files !\nThis is gonna cause error!')
-            print('=================')
-            return
+        image_path, json_path = check_path_valid(args.image_path, args.json_path)
     except FileNotFoundError as fnfe:
         print(fnfe)
         input("Press Enter to continue...")

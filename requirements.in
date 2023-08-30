@@ -11,3 +11,6 @@ torchaudio
 matplotlib
 PyYAML
 scipy
+pytesseract
+psutil
+ultralytics
