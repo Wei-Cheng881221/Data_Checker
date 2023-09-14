@@ -221,57 +221,57 @@ class DataFrame(QFrame):
         for i in self.freq:
             SF_set = [0 for i in range(11)]
             for j in self.data_sf:
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'SOUND_FIELD' and SF_set[0] == 0):
                     self.threshold_SF[0].append(j[2])
                     self.response_SF[0].append(j[3])
                     SF_set[0] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'AR' and SF_set[1] == 0):
                     self.threshold_SF[1].append(j[2])
                     self.response_SF[1].append(j[3])
                     SF_set[1] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'AL' and SF_set[2] == 0):
                     self.threshold_SF[2].append(j[2])
                     self.response_SF[2].append(j[3])
                     SF_set[2] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'COCHLEAR_IMPLANT' and SF_set[3] == 0):
                     self.threshold_SF[3].append(j[2])
                     self.response_SF[3].append(j[3])
                     SF_set[3] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'both' and j[4] == 'HEARING_AID' and SF_set[4] == 0):
                     self.threshold_SF[4].append(j[2])
                     self.response_SF[4].append(j[3])
                     SF_set[4] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'SOUND_FIELD' and SF_set[5] == 0):
                     self.threshold_SF[5].append(j[2])
                     self.response_SF[5].append(j[3])
                     SF_set[5] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'SOUND_FIELD' and SF_set[6] == 0):
                     self.threshold_SF[6].append(j[2])
                     self.response_SF[6].append(j[3])
                     SF_set[6] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'COCHLEAR_IMPLANT' and SF_set[7] == 0):
                     self.threshold_SF[7].append(j[2])
                     self.response_SF[7].append(j[3])
                     SF_set[7] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'COCHLEAR_IMPLANT' and SF_set[8] == 0):
                     self.threshold_SF[8].append(j[2])
                     self.response_SF[8].append(j[3])
                     SF_set[8] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'right' and j[4] == 'HEARING_AID' and SF_set[9] == 0):
                     self.threshold_SF[9].append(j[2])
                     self.response_SF[9].append(j[3])
                     SF_set[9] = 1
                     continue
-                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID'):
+                if (i == str(j[1]) and str(j[0]) == 'left' and j[4] == 'HEARING_AID' and SF_set[10] == 0):
                     self.threshold_SF[10].append(j[2])
                     self.response_SF[10].append(j[3])
                     SF_set[10] = 1
