@@ -358,8 +358,9 @@ class DataFrame(QFrame):
         self.data_sf = []
 
         df = pd.read_json(file, dtype={'response': 'bool'})
-        print(f'Number of symbol detected : {df.shape[0]-1}')
-        print("==========================")
+        self.parent.setWindowTitle(f'{os.path.basename(file)} | Number of symbol detected : {df.shape[0]-1}')
+        # print(f'Number of symbol detected : {df.shape[0]-1}')
+        # print("==========================")
         for i in range(df.shape[0]):
             # ear, freq, threshold, response, bbox
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
