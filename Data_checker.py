@@ -310,6 +310,7 @@ class DataFrame(QFrame):
         self.data_bon_fal = []  # > <
         self.data_sf = []
         df = pd.read_json(file)
+        self.parent.setWindowTitle(f'{os.path.basename(file)} | Number of symbol detected : {df.shape[0]}')
 
         for i in range(df.shape[0]):
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
@@ -791,6 +792,8 @@ def check_path_valid(image_path, json_path):
             if json_file in os.listdir(json_path):
                 json_names.append(os.path.join(json_path, json_file))
                 image_names.append(os.path.join(image_path, jpg_file))
+        json_names.sort()
+        image_names.sort()
 
     else:
         raise FileNotFoundError(f"File or folder not found: {image_path} or {json_path}  !\nThe program might crash later !")   

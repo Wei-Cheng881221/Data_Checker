@@ -49,7 +49,7 @@ class ImageInfoWindow(QMainWindow):
             with open("info.json", "r") as file:
                 info_data = json.load(file)
         except FileNotFoundError:
-            print("File not found.")
+            # print("File not found.")
             return 0
         except json.JSONDecodeError:
             print("Error decoding JSON.")
@@ -64,7 +64,6 @@ class ImageInfoWindow(QMainWindow):
                 return last_time
             else:
                 return 0
-
     def write_log(self, last_stop, image_path, json_path):
 
         output_data = {
@@ -151,7 +150,6 @@ class PictureFrame(QFrame):
         max_scene_width = 1000
         max_scene_height = 960
         self.view.resetTransform()
-        print(self.coordinate_info[0])
         if not (self.coordinate_info["ear"] == 'right' or self.coordinate_info["ear"] == 'left' or self.coordinate_info["ear"] == 'both'):
             x = self.coordinate_info['x coordinate']
             y = self.coordinate_info['y coordinate']
@@ -359,8 +357,7 @@ class DataFrame(QFrame):
 
         df = pd.read_json(file, dtype={'response': 'bool'})
         self.parent.setWindowTitle(f'{os.path.basename(file)} | Number of symbol detected : {df.shape[0]-1}')
-        # print(f'Number of symbol detected : {df.shape[0]-1}')
-        # print("==========================")
+        
         for i in range(df.shape[0]):
             # ear, freq, threshold, response, bbox
             if((df.iloc[i]['conduction'] == 'air') and (df.iloc[i]['masking'] == True)):
@@ -903,6 +900,8 @@ def check_path_valid(image_path, json_path):
             if json_file in os.listdir(json_path):
                 json_names.append(os.path.join(json_path, json_file))
                 image_names.append(os.path.join(image_path, jpg_file))
+        json_names.sort()
+        image_names.sort()
 
     else:
         raise FileNotFoundError(f"File or folder not found: {image_path} or {json_path}  !\nThe program might crash later !")   
