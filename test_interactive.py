@@ -1,12 +1,12 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsLineItem, QGraphicsTextItem,\
-QPushButton, QVBoxLayout, QWidget
+QPushButton, QVBoxLayout, QWidget, QFrame
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QColor, QPainter, QFont
 from PyQt5.QtWidgets import QGraphicsEllipseItem
 from PyQt5.QtCore import QRectF
 import json
-
+import math
 
 class DraggableSymbol(QGraphicsTextItem):
     def __init__(self, symbol, x, y, size, pen, boundary, parent=None):
@@ -32,30 +32,41 @@ class DraggableSymbol(QGraphicsTextItem):
         self.setPos(round(event.scenePos().x() / 40) * 40 - self.text_width / 2, round(event.scenePos().y() / 20) * 20 - self.text_height / 2)
         
 
-class GridTableApp(QMainWindow):
-    def __init__(self):
+class Digital_Audiogram(QFrame):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
         self.initUI()
+        # self.setFixedSize(800, 720)
 
     def initUI(self):
-        self.setGeometry(100, 100, 800, 800)
-        self.setWindowTitle('Grid Table App')
 
         # Create a QGraphicsView and QGraphicsScene
         self.view = QGraphicsView(self)
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
-        self.setCentralWidget(self.view)
+        # self.setCentralWidget(self.view)
 
         # Define the boundary for the table
         table_boundary = QRectF(0, 0, 400, 400)
 
-        map_freq_to_coordinate = {125:0, 250:1, 500:2, 750:3, 1000:4, 1500:5, 2000:6,
+        self.map_freq_to_coordinate = {125:0, 250:1, 500:2, 750:3, 1000:4, 1500:5, 2000:6,
                                     3000:7, 4000:8, 6000:9, 8000:10, 12000:11}
-        map_thres_to_coordinate = {-10:0, -5:1, 0:2, 5:3, 10:4, 15:5, 20:6, 25:7, 30:8, 35:9, 40:10,
-                                    45:11, 50:12, 55:13, 60:14, 65:15, 70:16, 75:17, 80:18, 85:19, 290:20,
+        self.map_thres_to_coordinate = {-10:0, -5:1, 0:2, 5:3, 10:4, 15:5, 20:6, 25:7, 30:8, 35:9, 40:10,
+                                    45:11, 50:12, 55:13, 60:14, 65:15, 70:16, 75:17, 80:18, 85:19, 90:20,
                                     95:21, 100:22, 105:23, 110:24, 115:25, 120:26}
         
+        self.AIR_UNMASKED_RIGHT = []
+        self.AIR_UNMASKED_LEFT = []
+        self.BONE_UNMASKED_RIGHT = []
+        self.BONE_UNMASKED_LEFT = []
+        self.AIR_MASKED_RIGHT = []
+        self.AIR_MASKED_LEFT = []
+        self.BONE_MASKED_RIGHT = []
+        self.BONE_MASKED_LEFT = []
+
+        self.for_delete = []
+
         # Add vertical grid lines
         for i in range(11):
             x = i * 40
@@ -82,70 +93,85 @@ class GridTableApp(QMainWindow):
             y_label.setPos(-50 - y_label.boundingRect().width(), y - y_label.boundingRect().height() / 2)
             self.scene.addItem(y_label)
 
-        self.datas = self.read_json("./open_json/example_PTA_2.json")
-        # print(self.data)
-
-        red_pen = QPen(QColor("red"), 1, Qt.SolidLine)
-        blue_pen = QPen(QColor("blue"), 1, Qt.SolidLine)
-        self.AIR_UNMASKED_RIGHT = []
-        AIR_UNMASKED_LEFT = []
-        BONE_UNMASKED_RIGHT = []
-        BONE_UNMASKED_LEFT = []
-        for data in self.datas:
-            match data['measurementType']:
-                case 'AIR_UNMASKED_RIGHT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    red_circle = DraggableSymbol('O', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
-                    self.scene.addItem(red_circle)
-                    self.AIR_UNMASKED_RIGHT.append(red_circle)
-                case 'AIR_UNMASKED_LEFT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    blue_cross = DraggableSymbol('X', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
-                    self.scene.addItem(blue_cross)
-                    AIR_UNMASKED_LEFT.append(blue_cross)
-                case 'BONE_UNMASKED_RIGHT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    red_circle = DraggableSymbol('<', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
-                    self.scene.addItem(red_circle)
-                    BONE_UNMASKED_RIGHT.append(red_circle)
-                case 'BONE_UNMASKED_LEFT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    blue_cross = DraggableSymbol('>', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
-                    self.scene.addItem(blue_cross)
-                    BONE_UNMASKED_LEFT.append(blue_cross)
-                case 'AIR_MASKED_RIGHT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    red_circle = DraggableSymbol('△', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
-                    self.scene.addItem(red_circle)
-                    AIR_UNMASKED_RIGHT.append(red_circle)
-                case 'AIR_MASKED_LEFT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    blue_cross = DraggableSymbol('☐', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
-                    self.scene.addItem(blue_cross)
-                    AIR_UNMASKED_LEFT.append(blue_cross)
-                case 'BONE_MASKED_RIGHT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    red_circle = DraggableSymbol('[', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
-                    self.scene.addItem(red_circle)
-                    BONE_UNMASKED_RIGHT.append(red_circle)
-                case 'BONE_MASKED_LEFT':
-                    table_boundary = QRectF(0, 0, 400, 400)
-                    blue_cross = DraggableSymbol(']', map_freq_to_coordinate[data['frequency']] * 40, map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
-                    self.scene.addItem(blue_cross)
-                    BONE_UNMASKED_LEFT.append(blue_cross)
-        self.show()
         output_button = QPushButton("Output")
         output_button.clicked.connect(self.outputButtonClicked)
         
+        self.load_in()
+
         # Create a widget to hold the button
         button_widget = QWidget()
         layout = QVBoxLayout()
+        layout.addWidget(self.view)
         layout.addWidget(output_button)
-        button_widget.setLayout(layout)
+        self.setLayout(layout)
 
-        # Add the widget to the QMainWindow
-        self.setMenuWidget(button_widget)
-    
+    def load_in(self):
+        
+        for i in self.for_delete:
+            self.scene.removeItem(i)
+
+        self.datas = self.read_json(self.parent.path_list[1][self.parent.file_seq])
+        
+        red_pen = QPen(QColor("red"), 1, Qt.SolidLine)
+        blue_pen = QPen(QColor("blue"), 1, Qt.SolidLine)
+        self.AIR_UNMASKED_RIGHT = []
+        self.AIR_UNMASKED_LEFT = []
+        self.BONE_UNMASKED_RIGHT = []
+        self.BONE_UNMASKED_LEFT = []
+        self.AIR_MASKED_RIGHT = []
+        self.AIR_MASKED_LEFT = []
+        self.BONE_MASKED_RIGHT = []
+        self.BONE_MASKED_LEFT = []
+
+        
+        # print(self.datas)
+        self.datas.pop(0)
+        for data in self.datas:
+            table_boundary = QRectF(0, 0, 400, 400)
+            match data['measurementType']:
+                case 'AIR_UNMASKED_RIGHT':
+                    if self.find_same(self.AIR_UNMASKED_RIGHT, data['frequency']):
+                        continue
+                    red_circle = DraggableSymbol('O', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
+                    self.scene.addItem(red_circle)
+                    self.for_delete.append(red_circle)
+                    self.AIR_UNMASKED_RIGHT.append([data['frequency'], data['threshold']])
+                case 'AIR_UNMASKED_LEFT':
+                    blue_cross = DraggableSymbol('X', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
+                    self.scene.addItem(blue_cross)
+                    self.for_delete.append(blue_cross)
+                    self.AIR_UNMASKED_LEFT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'BONE_UNMASKED_RIGHT':
+                    red_circle = DraggableSymbol('<', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
+                    self.scene.addItem(red_circle)
+                    self.for_delete.append(red_circle)
+                    self.BONE_UNMASKED_RIGHT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'BONE_UNMASKED_LEFT':
+                    blue_cross = DraggableSymbol('>', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
+                    self.scene.addItem(blue_cross)
+                    self.for_delete.append(blue_cross)
+                    self.BONE_UNMASKED_LEFT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'AIR_MASKED_RIGHT':
+                    red_circle = DraggableSymbol('△', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
+                    self.scene.addItem(red_circle)
+                    self.for_delete.append(red_circle)
+                    self.AIR_MASKED_RIGHT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'AIR_MASKED_LEFT':
+                    blue_cross = DraggableSymbol('☐', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
+                    self.scene.addItem(blue_cross)
+                    self.for_delete.append(blue_cross)
+                    self.AIR_MASKED_LEFT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'BONE_MASKED_RIGHT':
+                    red_circle = DraggableSymbol('[', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, red_pen, table_boundary)
+                    self.scene.addItem(red_circle)
+                    self.for_delete.append(red_circle)
+                    self.BONE_MASKED_RIGHT.append([self.map_freq_to_coordinate[data['frequency']], self.map_thres_to_coordinate[data['threshold']]])
+                case 'BONE_MASKED_LEFT':
+                    blue_cross = DraggableSymbol(']', self.map_freq_to_coordinate[data['frequency']] * 40, self.map_thres_to_coordinate[data['threshold']] * 20, 20, blue_pen, table_boundary)
+                    self.scene.addItem(blue_cross)
+                    self.for_delete.append(blue_cross)
+                    self.BONE_MASKED_LEFT.append([data['frequency'], ['threshold']])
+
     def read_json(self, file):
         with open(file, "r") as file:
             data = json.load(file)
@@ -154,13 +180,12 @@ class GridTableApp(QMainWindow):
     def outputButtonClicked(self):
         # Handle the "Output" button click event
         for symbol in self.AIR_UNMASKED_RIGHT:
-            # print(symbol.pos())
+            print(symbol[0], symbol[1])
             continue
-    
-def main():
-    app = QApplication(sys.argv)
-    ex = GridTableApp()
-    sys.exit(app.exec_())
 
-if __name__ == '__main__':
-    main()
+    def find_same(self, symbol_list:list, input_freq: int) -> bool:
+        for symbol in symbol_list:
+            if symbol[0] == input_freq:
+                print(f'Found Different !!! Frequency = {input_freq}')
+                return True
+        return False
