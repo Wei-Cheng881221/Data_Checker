@@ -117,14 +117,14 @@ class PictureFrame(QFrame):
         self.zoom_factor = 1.0
 
         self.view = QGraphicsView(self)
-        self.view.setFixedSize(1000, 960)
+        self.view.setFixedSize(int(self.parent.width_ / 2)-60, int(self.parent.height_ - 120))
         self.view.setFrameShape(QFrame.NoFrame)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.view.setDragMode(QGraphicsView.ScrollHandDrag)
         self.view.setRenderHint(QPainter.Antialiasing)
-        self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        # self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
         # load first image
         self.load_image()
@@ -138,8 +138,8 @@ class PictureFrame(QFrame):
         # print(self.parent.path_list[0][self.parent.file_seq])
         self.im = QPixmap(self.parent.path_list[0][self.parent.file_seq])
         self.coordinate_info = pd.read_json(self.parent.path_list[1][self.parent.file_seq]).iloc[0]
-        max_scene_width = 1000
-        max_scene_height = 960
+        max_scene_width = int(self.parent.width_ / 2)-60
+        max_scene_height = int(self.parent.height_ - 120)
         self.view.resetTransform()
         self.c_im = None
         if not (self.coordinate_info["ear"] == 'right' or \

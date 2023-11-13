@@ -194,15 +194,23 @@ class LorR(QWidget):
         layout = QHBoxLayout()
 
         button_right_ear = QPushButton("Right Ear")  # Create a button
-        # button_right_ear.clicked.connect(self.AddSymbolButtonClicked)
+        button_right_ear.clicked.connect(self.Set_R)
         
         button_left_ear = QPushButton("Left Ear")  # Create a button
-        # button_left_ear.clicked.connect(self.AddSymbolButtonClicked)
+        button_left_ear.clicked.connect(self.Set_L)
 
         layout.addWidget(button_right_ear)  # Add the button to the right
         layout.addWidget(button_left_ear)  # Add the button to the left
 
         self.setLayout(layout)
+
+    def Set_R(self):
+        self.parent.side = 'right'
+        self.parent.load_in()
+    
+    def Set_L(self):
+        self.parent.side = 'left'
+        self.parent.load_in()
 
 class Digital_Audiogram(QFrame):
     def __init__(self, parent):
@@ -264,11 +272,13 @@ class Digital_Audiogram(QFrame):
             y_label.setPos(-10 - y_label.boundingRect().width(), y - y_label.boundingRect().height() / 2)
             self.scene.addItem(y_label)
 
+        self.side = 'right'
+        left_or_right = LorR(self)
+        add_symbol = Add_Symbol(self)
+        
         output_button = QPushButton("Output")
         output_button.clicked.connect(self.outputButtonClicked)
-        
-        add_symbol = Add_Symbol(self)
-        left_or_right = LorR(self)
+
         self.load_in()
 
         # Create a widget to hold the button
@@ -294,9 +304,14 @@ class Digital_Audiogram(QFrame):
         for i_list in self.all_symbol_list:
             i_list.clear()
 
+        number_of_audiogram = 1
         if 'type' in self.datas[0]:
+            number_of_audiogram = self.datas[0]["number of audiograms"]
             self.datas.pop(0)
+
         for data in self.datas:
+            if(number_of_audiogram == 2 and self.side != data['ear']):
+                continue
             match data['measurementType']:
                 case 'AIR_UNMASKED_RIGHT':
                     if self.find_same(self.all_symbol_list[0], data['frequency']):
