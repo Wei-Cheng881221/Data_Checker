@@ -12,8 +12,8 @@ import os
 class DraggableSymbol(QGraphicsTextItem):
     def __init__(self, parent, symbol, s_type, x, y, size, pen):
         self.parent = parent
-        position = symbol.find('↓')
-        if(position != -1):
+        self.position = symbol.find('↓')
+        if(self.position != -1):
             self.response = False
         else:
             self.response = True
@@ -34,7 +34,7 @@ class DraggableSymbol(QGraphicsTextItem):
         self.text_height = self.boundingRect().height()
 
         if(not self.response):
-            if(position == 0):
+            if(self.position == 0):
                 self.setPlainText('↓'+self.symbol)
             else:
                 self.setPlainText(self.symbol+'↓')
@@ -43,12 +43,12 @@ class DraggableSymbol(QGraphicsTextItem):
 
         if(self.symbol == 'O' or self.symbol == 'X' or self.symbol == '△' or self.symbol == '☐' or \
         self.symbol == 'S' or self.symbol == 'A' or self.symbol == 'C' or self.symbol == 'AR' or self.symbol == 'AL'):
-            if (not self.response) and (position == 0):
+            if (not self.response) and (self.position == 0):
                 self.setPos(x - self.text_width / 2 - left_shift_width, y - self.text_height / 2)
             else:
                 self.setPos(x - self.text_width / 2, y - self.text_height / 2)
         elif(self.symbol == '<' or self.symbol == '['):
-            if (not self.response) and (position == 0):
+            if (not self.response) and (self.position == 0):
                 self.setPos(x - self.text_width / 2 - 12 - left_shift_width, y - self.text_height / 2)
             else:
                 self.setPos(x - self.text_width / 2 - 12, y - self.text_height / 2)
@@ -83,12 +83,12 @@ class DraggableSymbol(QGraphicsTextItem):
         round(event.scenePos().y() / 20) * 20 >= 0 and round(event.scenePos().y() / 20) * 20 <= 520):
             if(self.symbol == 'O' or self.symbol == 'X' or self.symbol == '△' or self.symbol == '☐' \
             or self.symbol == 'S' or self.symbol == 'A' or self.symbol == 'C' or self.symbol == 'AR' or self.symbol == 'AL'):
-                if (not self.response) and (position == 0):
+                if (not self.response) and (self.position == 0):
                     self.setPos(round(event.scenePos().x() / 40) * 40 - self.text_width / 2, round(event.scenePos().y() / 20) * 20 - self.text_height / 2)
                 else:
                     self.setPos(round(event.scenePos().x() / 40) * 40 - self.text_width / 2, round(event.scenePos().y() / 20) * 20 - self.text_height / 2)
             elif(self.symbol == '<' or self.symbol == '['):
-                if (not self.response) and (position == 0):
+                if (not self.response) and (self.position == 0):
                     self.setPos(round(event.scenePos().x() / 40) * 40 - self.text_width / 2 - 12, round(event.scenePos().y() / 20) * 20 - self.text_height / 2)
                 else:
                     self.setPos(round(event.scenePos().x() / 40) * 40 - self.text_width / 2 - 12, round(event.scenePos().y() / 20) * 20 - self.text_height / 2)
