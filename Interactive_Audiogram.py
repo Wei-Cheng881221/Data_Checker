@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsLineItem, QGraphicsTextItem,\
-QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QFrame, QMessageBox, QComboBox
+QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QFrame, QMessageBox, QComboBox, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QColor, QPainter, QFont
 from PyQt5.QtWidgets import QGraphicsEllipseItem
@@ -126,21 +126,27 @@ class Add_Symbol(QWidget):
 
     def initUI(self):
         layout = QHBoxLayout()  # Create a horizontal layout
+        self.label1 = QLabel('Ear : ')
         self.combo1 = QComboBox()  # Create a combo box
         self.combo1.addItems([' ', 'O', 'X', '△', '☐', \
             '<', '>', '[', ']', 'S', 'A', 'C', 'AL', 'AR'])
         
+        self.label2 = QLabel('Side(SF) : ')
         self.combo2 = QComboBox()  # Create a combo box
         self.combo2.addItems([' ', 'right', 'left', 'both'])
 
+        self.label3 = QLabel('Response : ')
         self.combo3 = QComboBox()  # Create a combo box
-        self.combo3.addItems(['Response : True', 'Response : False'])
+        self.combo3.addItems(['True', 'False'])
         
         button = QPushButton("Add symbol on Audiogram")  # Create a button
         button.clicked.connect(self.AddSymbolButtonClicked)
 
+        layout.addWidget(self.label1)  # Add the combo box to the left
         layout.addWidget(self.combo1)  # Add the combo box to the left
+        layout.addWidget(self.label2)  # Add the combo box to the middle
         layout.addWidget(self.combo2)  # Add the combo box to the middle
+        layout.addWidget(self.label3)  # Add the combo box to the right
         layout.addWidget(self.combo3)  # Add the combo box to the right
         layout.addWidget(button)  # Add the button to the right
 
@@ -531,7 +537,7 @@ class Digital_Audiogram(QFrame):
 
                 if(symbol[3] == ' '):
                     data["response"] = true
-                elif(symbol[3] == 'Response : False'):
+                elif(symbol[3] == 'False'):
                     data["response"] = False
                 
                 if(symbol[0].change_pos == [0, 0]):
