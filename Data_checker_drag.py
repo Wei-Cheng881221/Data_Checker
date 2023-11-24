@@ -223,9 +223,11 @@ class Menubar(QMenuBar):
 
     def change_to_checker(self):
         self.parent.Display_mode = 'checker_mode'
+        self.parent.grid_layout.digital_audiogram.set_layout()
 
     def change_to_clinical(self):
         self.parent.Display_mode = 'clinical_mode'
+        self.parent.grid_layout.digital_audiogram.set_layout()
 
 def check_path_valid(image_path, json_path):
     image_names = []

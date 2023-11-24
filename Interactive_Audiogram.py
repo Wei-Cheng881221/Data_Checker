@@ -278,7 +278,7 @@ class Digital_Audiogram(QFrame):
             y_label.setPos(-10 - y_label.boundingRect().width(), y - y_label.boundingRect().height() / 2)
             self.scene.addItem(y_label)
 
-        self.side = 'right'
+        self.side = "right"
         self.left_or_right = LorR(self)
         self.add_symbol = Add_Symbol(self)
         
@@ -289,21 +289,25 @@ class Digital_Audiogram(QFrame):
 
         # Create a widget to hold the button
         button_widget = QWidget()
-        # self.layout = QVBoxLayout()
-        # self.layout.addWidget(self.view)
-        # self.layout.addWidget(self.left_or_right)
-        # self.layout.addWidget(self.add_symbol)
-        # self.layout.addWidget(self.output_button)
-        # self.setLayout(self.layout)
         self.set_layout()
 
     def set_layout(self):
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.view)
-        self.layout.addWidget(self.left_or_right)
-        self.layout.addWidget(self.add_symbol)
-        self.layout.addWidget(self.output_button)
-        self.setLayout(self.layout)
+        layout = QVBoxLayout()
+        if(self.parent.Display_mode == 'checker_mode'):
+            left_or_right = LorR(self)
+            add_symbol = Add_Symbol(self)
+            
+            output_button = QPushButton("Output")
+            output_button.clicked.connect(self.outputButtonClicked)
+
+            layout.addWidget(self.view)
+            layout.addWidget(left_or_right)
+            layout.addWidget(add_symbol)
+            layout.addWidget(output_button)
+        elif(self.parent.Display_mode == 'clinical_mode'):
+            layout.add(QLabel('Testing for new layout'))
+
+        self.setLayout(layout)
 
     def load_in(self):
         for i_list in self.all_symbol_list:
