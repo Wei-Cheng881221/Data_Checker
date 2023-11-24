@@ -28,7 +28,7 @@ class ImageInfoWindow(QMainWindow):
         self.grid_layout = GridLayout(self, path_list)
 
         # Create a menubar using the Menubar class
-        self.Display_mode = checker
+        self.Display_mode = 'checker_mode'
         self.menubar = Menubar(self)
         self.setMenuBar(self.menubar)
         
@@ -196,11 +196,12 @@ class Menubar(QMenuBar):
         how_to_use = QAction('How to use', self)
         Info_menu.addAction(how_to_use)
 
-        checker_mode = QAction('Checker Mode')
+        checker_mode = QAction('Checker Mode', self)
         checker_mode.triggered.connect(self.change_to_checker)
-        clinical_mode = QAction('Clinical Mode')
+        clinical_mode = QAction('Clinical Mode', self)
         clinical_mode.triggered.connect(self.change_to_clinical)
         Mode_menu.addAction(checker_mode)
+        Mode_menu.addAction(clinical_mode)
 
     def loadNextFile(self):
         if(self.parent.file_seq == len(self.parent.path_list[1])-1):
@@ -221,10 +222,10 @@ class Menubar(QMenuBar):
         self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
 
     def change_to_checker(self):
-        self.parent.Display_mode = checker_mode
+        self.parent.Display_mode = 'checker_mode'
 
     def change_to_clinical(self):
-        self.parent.Display_mode = clinical_mode
+        self.parent.Display_mode = 'clinical_mode'
 
 def check_path_valid(image_path, json_path):
     image_names = []
