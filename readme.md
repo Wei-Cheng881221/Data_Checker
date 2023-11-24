@@ -23,7 +23,7 @@ pip install opencv-python-headless
 sudo apt-get install tesseract-ocr
 ```
 ## How to use
-You will have to first inference using the Audiogram digitization Project and get the output data.
+You will have to first inference using the Audiogram digitization Project and get the output data.  
 With the data, you will only be able to open it up with this application.
 
 ### Open the application
@@ -36,8 +36,15 @@ python Data_checker_drag.py -i ../Ear_Model/test_set/ -j ../Ear_Model/output_HSV
 ```
 
 ### Layout
-The table on the right hand side could be a liitle crowd if your computer screen is smaller.
+The table on the right hand side could be a liitle crowd if your computer screen is smaller.  
 ![Alt text](demo_image/general.png)
+
+### Left and Right Button
+These buttons are only in use when there are two diagrams showing on the left. This allow you to check out specific audiogram you want.  
+⚠️ Be aware that right ear is on the left audiogram and the left is on the right!
+
+### Add Symbol
+You will need to choose the `right`, `left` or `both` when you want to add a SF symbol, e.g., `S`, `A` and `C`, which stands for `Sound Field`, `HEARING_AID` and `COCHLEAR_IMPLANT`.
 
 ### Hot Key
 - `ALT + left`: previous file
