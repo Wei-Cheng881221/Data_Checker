@@ -279,22 +279,31 @@ class Digital_Audiogram(QFrame):
             self.scene.addItem(y_label)
 
         self.side = 'right'
-        left_or_right = LorR(self)
-        add_symbol = Add_Symbol(self)
+        self.left_or_right = LorR(self)
+        self.add_symbol = Add_Symbol(self)
         
-        output_button = QPushButton("Output")
-        output_button.clicked.connect(self.outputButtonClicked)
+        self.output_button = QPushButton("Output")
+        self.output_button.clicked.connect(self.outputButtonClicked)
 
         self.load_in()
 
         # Create a widget to hold the button
         button_widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.view)
-        layout.addWidget(left_or_right)
-        layout.addWidget(add_symbol)
-        layout.addWidget(output_button)
-        self.setLayout(layout)
+        # self.layout = QVBoxLayout()
+        # self.layout.addWidget(self.view)
+        # self.layout.addWidget(self.left_or_right)
+        # self.layout.addWidget(self.add_symbol)
+        # self.layout.addWidget(self.output_button)
+        # self.setLayout(self.layout)
+        self.set_layout()
+
+    def set_layout(self):
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.view)
+        self.layout.addWidget(self.left_or_right)
+        self.layout.addWidget(self.add_symbol)
+        self.layout.addWidget(self.output_button)
+        self.setLayout(self.layout)
 
     def load_in(self):
         for i_list in self.all_symbol_list:
