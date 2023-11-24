@@ -28,6 +28,7 @@ class ImageInfoWindow(QMainWindow):
         self.grid_layout = GridLayout(self, path_list)
 
         # Create a menubar using the Menubar class
+        self.Display_mode = checker
         self.menubar = Menubar(self)
         self.setMenuBar(self.menubar)
         
@@ -180,20 +181,26 @@ class Menubar(QMenuBar):
         self.setFont(font)
 
         # Add a "File" menu to the menubar
-        file_menu = self.addMenu('File')
+        File_menu = self.addMenu('File')
         Info_menu = self.addMenu('Info')
+        Mode_menu = self.addMenu('Mode')
 
         next_action = QAction('Next', self)
         next_action.triggered.connect(self.loadNextFile)
-        file_menu.addAction(next_action)
+        File_menu.addAction(next_action)
 
         prev_action = QAction('Previous', self)
         prev_action.triggered.connect(self.loadPrevFile)
-        file_menu.addAction(prev_action)
+        File_menu.addAction(prev_action)
 
         how_to_use = QAction('How to use', self)
-        # prev_action.triggered.connect(self.loadPrevFile)
         Info_menu.addAction(how_to_use)
+
+        checker_mode = QAction('Checker Mode')
+        checker_mode.triggered.connect(self.change_to_checker)
+        clinical_mode = QAction('Clinical Mode')
+        clinical_mode.triggered.connect(self.change_to_clinical)
+        Mode_menu.addAction(checker_mode)
 
     def loadNextFile(self):
         if(self.parent.file_seq == len(self.parent.path_list[1])-1):
@@ -212,6 +219,12 @@ class Menubar(QMenuBar):
         self.parent.grid_layout.label_picture.load_image()
         self.parent.grid_layout.digital_audiogram.load_in()
         self.parent.grid_layout.json_path = self.parent.path_list[1][self.parent.file_seq]
+
+    def change_to_checker(self):
+        self.parent.Display_mode = checker_mode
+
+    def change_to_clinical(self):
+        self.parent.Display_mode = clinical_mode
 
 def check_path_valid(image_path, json_path):
     image_names = []
