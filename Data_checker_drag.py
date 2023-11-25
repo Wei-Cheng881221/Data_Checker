@@ -23,15 +23,15 @@ class ImageInfoWindow(QMainWindow):
         self.width_ = width_
         self.height_ = height_
 
-        # Create a grid layout
-        self.file_seq = self.read_log(path_list[0], path_list[1])
-        self.grid_layout = GridLayout(self, path_list)
-
         # Create a menubar using the Menubar class
         self.Display_mode = 'checker_mode'
         self.menubar = Menubar(self)
         self.setMenuBar(self.menubar)
         
+        # Create a grid layout
+        self.file_seq = self.read_log(path_list[0], path_list[1])
+        self.grid_layout = GridLayout(self, path_list)
+
         #keyboard shortcut for next file
         self.shortcut1 = QShortcut(QKeySequence("Alt+Right"), self)
         self.shortcut1.activated.connect(self.menubar.loadNextFile)
