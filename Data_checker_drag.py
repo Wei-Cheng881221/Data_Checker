@@ -2,7 +2,8 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, \
 QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QMenuBar, QAction, \
 QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QGraphicsScene, QGraphicsView, \
-QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy, QShortcut, QGraphicsRectItem, QDesktopWidget
+QMessageBox, QAbstractItemView, QScrollArea, QSizePolicy, QShortcut, QGraphicsRectItem, \
+QDesktopWidget, QFileDialog
 from PyQt5.QtGui import QFont, QPainter, QBrush, QColor, QPalette, QKeySequence
 from PyQt5.QtCore import Qt, QRect, QRectF
 import sys
@@ -16,22 +17,25 @@ import  Interactive_Audiogram
 class ImageInfoWindow(QMainWindow):
     def __init__(self, path_list, width_, height_):
         super().__init__()
+        self.Display_mode = 'checker_mode'
         self.initUI(path_list, width_, height_)
 
     def initUI(self, path_list, width_, height_):
         self.path_list = path_list
         self.width_ = width_
         self.height_ = height_
+        
+        # Create a menubar using the Menubar class
+        self.menubar = Menubar(self)
+        self.setMenuBar(self.menubar)
+        
+        if(self.path_list == [[], []]):
+            self.menubar.openDialog(mode = 'no_input')
 
         # Create a grid layout
         self.file_seq = self.read_log(path_list[0], path_list[1])
         self.grid_layout = GridLayout(self, path_list)
 
-        # Create a menubar using the Menubar class
-        self.Display_mode = 'checker_mode'
-        self.menubar = Menubar(self)
-        self.setMenuBar(self.menubar)
-        
         #keyboard shortcut for next file
         self.shortcut1 = QShortcut(QKeySequence("Alt+Right"), self)
         self.shortcut1.activated.connect(self.menubar.loadNextFile)
@@ -185,6 +189,10 @@ class Menubar(QMenuBar):
         Info_menu = self.addMenu('Info')
         Mode_menu = self.addMenu('Mode')
 
+        open_action = QAction('Open', self)
+        open_action.triggered.connect(self.openDialog)
+        File_menu.addAction(open_action)
+
         next_action = QAction('Next', self)
         next_action.triggered.connect(self.loadNextFile)
         File_menu.addAction(next_action)
@@ -202,6 +210,36 @@ class Menubar(QMenuBar):
         clinical_mode.triggered.connect(self.change_to_clinical)
         Mode_menu.addAction(checker_mode)
         Mode_menu.addAction(clinical_mode)
+
+    def openDialog(self, mode = 'normal'):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        folder1 = QFileDialog.getExistingDirectory(self, "Select Image Folder", options=options)
+        if not folder1:
+            return  # User closed the dialog or didn't select a folder
+
+        folder2 = QFileDialog.getExistingDirectory(self, "Select json Folder", options=options)
+        if not folder2:
+            return  # User closed the dialog or didn't select a folder
+        
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setText(f'Directory 1: {folder1}\nDirectory 2: {folder2}')
+        msg_box.setWindowTitle('Confirmation')
+        msg_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        result = msg_box.exec_()
+
+        if result == QMessageBox.Ok:
+            print("User confirmed the directories.")
+            self.parent.path_list[0], self.parent.path_list[1] = check_path_valid(folder1, folder2)
+            if mode == 'normal':
+                self.parent.file_seq = 0
+                self.parent.grid_layout.label_picture.load_image()
+                self.parent.grid_layout.digital_audiogram.load_in()
+        else:
+            print("User cancelled the operation.")
+            return
 
     def loadNextFile(self):
         if(self.parent.file_seq == len(self.parent.path_list[1])-1):
@@ -247,17 +285,21 @@ def check_path_valid(image_path, json_path):
         json_names.sort()
         image_names.sort()
 
-    else:
-        raise FileNotFoundError(f"File or folder not found: {image_path} or {json_path}  !\nThe program might crash later !")   
+    # else:
+    #     raise FileNotFoundError(f"File or folder not found: {image_path} or {json_path}  !\nThe program might crash later !")   
     return image_names, json_names
 
 def main():
     parser = argparse.ArgumentParser(description='The following is the arguments of this application')
-    parser.add_argument("-i", "--image_path", help = "The input path to one image or a folder path of images", default = './open_image')
-    parser.add_argument("-j", "--json_path", help = "The input path to one json or a folder path of json", default = './open_json')
+    parser.add_argument("-i", "--image_path", help = "The input path to one image or a folder path of images", default = 'no_input')
+    parser.add_argument("-j", "--json_path", help = "The input path to one json or a folder path of json", default = 'no_input')
     args = parser.parse_args()
     
+    image_path = []
+    json_path = []
+
     try:
+        print(args.image_path, args.json_path)
         image_path, json_path = check_path_valid(args.image_path, args.json_path)
         # print(image_path, json_path)
     except FileNotFoundError as fnfe:

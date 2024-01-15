@@ -1,0 +1,1 @@
+python Data_checker_drag.py -i ../Ear_Model/test_set_limitation/rotation_3r/SF_hand -j ../Ear_Model/test_set_limitation/rotation_3r/SF_hand_out/
