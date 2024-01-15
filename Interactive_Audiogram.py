@@ -279,35 +279,44 @@ class Digital_Audiogram(QFrame):
             self.scene.addItem(y_label)
 
         self.side = "right"
-        self.left_or_right = LorR(self)
-        self.add_symbol = Add_Symbol(self)
-        
-        self.output_button = QPushButton("Output")
-        self.output_button.clicked.connect(self.outputButtonClicked)
+        # self.left_or_right = LorR(self)
+        # self.add_symbol = Add_Symbol(self)
+
+        # self.output_button = QPushButton("Output")
+        # self.output_button.clicked.connect(self.outputButtonClicked)
 
         self.load_in()
 
         # Create a widget to hold the button
         button_widget = QWidget()
+        
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.view)
         self.set_layout()
+        self.setLayout(self.layout)
 
     def set_layout(self):
-        layout = QVBoxLayout()
         if(self.parent.Display_mode == 'checker_mode'):
-            left_or_right = LorR(self)
-            add_symbol = Add_Symbol(self)
+            self.left_or_right = LorR(self)
+            self.add_symbol = Add_Symbol(self)
             
-            output_button = QPushButton("Output")
-            output_button.clicked.connect(self.outputButtonClicked)
+            self.output_button = QPushButton("Output")
+            self.output_button.clicked.connect(self.outputButtonClicked)
 
-            layout.addWidget(self.view)
-            layout.addWidget(left_or_right)
-            layout.addWidget(add_symbol)
-            layout.addWidget(output_button)
+            self.layout.addWidget(self.left_or_right)
+            self.layout.addWidget(self.add_symbol)
+            self.layout.addWidget(self.output_button)
         elif(self.parent.Display_mode == 'clinical_mode'):
-            layout.add(QLabel('Testing for new layout'))
+            self.layout.removeWidget(self.left_or_right)
+            self.layout.removeWidget(self.add_symbol)
+            self.layout.removeWidget(self.output_button)
+            
+            self.left_or_right.deleteLater()
+            self.add_symbol.deleteLater()
+            self.output_button.deleteLater()
 
-        self.setLayout(layout)
+            self.layout.addWidget(QLabel('Testing for new layout'))
+
 
     def load_in(self):
         for i_list in self.all_symbol_list:
