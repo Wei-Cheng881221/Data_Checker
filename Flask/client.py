@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog
 from PyQt5.QtCore import Qt
 import requests
+from requests.auth import HTTPBasicAuth
 import json
 import subprocess
 import shutil
@@ -41,22 +42,33 @@ class FileSenderGUI(QWidget):
 
     def send_to_server(self):
         try:
+            # username = 'ntucsie'
+            # password = 'Vh2RxYVp'
             with open(self.file_path, 'rb') as file:
                 files = {'file': open(self.file_path, 'rb')}
                 # Replace this URL with your server's URL
+                # server_url = 'http://118.166.80.199:5000/process'
                 server_url = 'http://127.0.0.1:5000/process'
+                # response = requests.get('http://118.166.80.199:972/', auth=HTTPBasicAuth(username, password))
                 response = requests.post(server_url, files=files)
 
             basename = os.path.basename(self.file_path)
             filename = basename.split(f'.')[0]
             response.raise_for_status()
             server_response = response.json()
+            if not os.path.exists('./input_json/'):
+                # Create the folder if it doesn't exist
+                os.makedirs('./input_json/')
             with open(f'input_json/{filename}.json', 'w') as file:
                 json.dump(server_response, file, indent=4)
             print("Get server response")
 
             # You can add logic here to handle the server response
             self.close()
+
+            if not os.path.exists('./input_image/'):
+                # Create the folder if it doesn't exist
+                os.makedirs('./input_image/')
             shutil.copyfile(f'{self.file_path}', f'input_image/{basename}')
 
             # Run another program using subprocess

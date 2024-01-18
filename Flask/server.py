@@ -15,18 +15,22 @@ app.config['DOWNLOAD_FOLDER'] = DOWNLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "connect success"}), 200
+
 @app.route('/process', methods=['POST'])
 def process_file():
     try:
         # Check if the post request has the file part
         if 'file' not in request.files:
-            return jsonify({"error": "No file part"})
+            return jsonify({"error": "No file part"}), 400
 
         file = request.files['file']
 
         # Check if the file is empty
         if file.filename == '':
-            return jsonify({"error": "No selected file"})
+            return jsonify({"error": "No selected file"}), 400
 
         # Check if the file has a valid extension
         if file and allowed_file(file.filename):
@@ -56,8 +60,8 @@ def process_file():
             with open(f'downloads/{basename}.json', 'r') as result_file:
                 data = json.load(result_file)
             
-            command = 'rm -r downloads && \
-            rm -r uploads/'
+            command = 'rm -r downloads/* && \
+            rm -r uploads/*'
 
             # Run the command
             result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -66,12 +70,12 @@ def process_file():
             print(f"Return code: {result.returncode}")
             
             # Return a response
-            return jsonify(data)
+            return jsonify(data), 200
 
-        return jsonify({"error": "Invalid file format"})
+        return jsonify({"error": "Invalid file format"}), 400
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):

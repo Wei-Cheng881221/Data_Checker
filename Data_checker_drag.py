@@ -13,6 +13,7 @@ import argparse
 import os 
 from datetime import datetime
 import  Interactive_Audiogram
+from screeninfo import get_monitors
 
 class ImageInfoWindow(QMainWindow):
     def __init__(self, path_list, width_, height_):
@@ -270,6 +271,7 @@ class Menubar(QMenuBar):
 def check_path_valid(image_path, json_path):
     image_names = []
     json_names = []
+    file_names = []
     if os.path.isfile(image_path) and os.path.isfile(json_path):
         file_names.append(image_path)
         file_names.append(json_path)
@@ -307,8 +309,13 @@ def main():
         input("Press Enter to continue...")
 
     app = QApplication(sys.argv)
-    screen = QDesktopWidget().screenGeometry()
-    width, height = screen.width(), screen.height()
+    monitors = get_monitors()
+    width = 1920
+    height = 1080
+    for i, monitor in enumerate(monitors, 1):
+        width = min(width, monitor.width)
+        height_ = min(height, monitor.height)
+    # print(f'audiogram size ==> width: {width}, height: {height}')
     window = ImageInfoWindow([image_path, json_path], width, height)
     # window.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint);
     # Set the window's size to match the screen

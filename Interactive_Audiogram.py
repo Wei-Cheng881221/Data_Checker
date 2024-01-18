@@ -98,7 +98,6 @@ class DraggableSymbol(QGraphicsTextItem):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # print(self.pos().x() + self.text_width / 2, self.initial_pos[0])
             if((self.symbol == 'O' or self.symbol == 'X' or self.symbol == '△' or self.symbol == '☐' \
             or self.symbol == 'S' or self.symbol == 'A' or self.symbol == 'C' or self.symbol == 'AR' or self.symbol == 'AL') and \
             (int(self.pos().x() + self.text_width / 2) != int(self.initial_pos[0]) or self.pos().y() + self.text_height / 2 != self.initial_pos[1])):
@@ -218,10 +217,113 @@ class LorR(QWidget):
         self.parent.side = 'left'
         self.parent.load_in()
 
+class Information(QWidget):
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
+        self.initUI()
+    
+    def initUI(self):
+        layout = QVBoxLayout()
+
+        # self.parent.outputButtonClicked()
+        self.datas = self.parent.read_json(self.parent.parent.path_list[1][self.parent.parent.file_seq])
+        if 'coordinate' in self.datas[0]:
+            self.datas.pop(0)
+        self.data_get = self.get_data()
+
+        right_data = self.data_get['right']
+        left_data = self.data_get['left']
+        right_data['add'] = 0
+        left_data['add'] = 0
+        right_cnt = self.data_get['info']['right_cnt']
+        left_cnt = self.data_get['info']['left_cnt']
+
+        for key, value in right_data.items():
+            if(value != -1):
+                right_data['add'] += value
+        right_data['add'] /= right_cnt
+        right_data['add'] = round(right_data['add'], 2)
+
+        for key, value in left_data.items():
+            if(value != -1):
+                left_data['add'] += value
+        left_data['add'] /= left_cnt
+        left_data['add'] = round(left_data['add'], 2)
+
+        self.label1 = QLabel(f"右耳聽力閥值 : ( {right_data[125]} + {right_data[250]} + {right_data[500]} + \
+{right_data[1000]} + {right_data[2000]} + {right_data[4000]} + {right_data[8000]})/{right_cnt} = {right_data['add']} dB")
+        # self.label2 = QLabel(f'右耳聽力閥值 : ( __ + __  + __ + __ )/4 = __ dB')
+        self.label2 = QLabel(f"左耳聽力閥值 : ( {left_data[125]} + {left_data[250]} + {left_data[500]} + \
+{left_data[1000]} + {left_data[2000]} + {left_data[4000]} + {left_data[8000]})/{left_cnt} = {left_data['add']} dB")
+
+        right_data['ratio'] = round((right_data['add'] - 25)*1.5, 2)
+        left_data['ratio'] = round((left_data['add'] - 25)*1.5, 2)
+        self.label3 = QLabel(f"右耳聽障比率 : ({right_data['add']}-25)x1.5% = {right_data['ratio']} %")
+        self.label4 = QLabel(f"左耳聽障比率 : ({left_data['add']}-25)x1.5% = {left_data['ratio']} %")
+
+        if(right_data['ratio'] > left_data['ratio']):
+            better_ratio = right_data['ratio']
+            worse_ratio = left_data['ratio']
+        else:
+            better_ratio = left_data['ratio']
+            worse_ratio = right_data['ratio']
+        
+        final_ratio = round((better_ratio*5 + worse_ratio)/6, 2)
+        self.label5 = QLabel(f'(優耳聽障比率 : {better_ratio} %x5 + 劣耳聽障比率 : {worse_ratio} %)/6 = {final_ratio} %')
+
+        layout.addWidget(self.label1)
+        layout.addWidget(self.label2)
+        layout.addWidget(self.label3)
+        layout.addWidget(self.label4)
+        layout.addWidget(self.label5)
+
+        self.setLayout(layout)
+
+    def get_data(self):
+        data_dict = {
+            'info':{
+                'left_cnt':0,
+                'right_cnt':0,
+            },
+            'right':{
+                125:-1,
+                250:-1,
+                500:-1,
+                1000:-1,
+                2000:-1,
+                4000:-1,
+                8000:-1
+            },
+            'left':{
+                125:-1,
+                250:-1,
+                500:-1,
+                1000:-1,
+                2000:-1,
+                4000:-1,
+                8000:-1
+            }
+        }
+        
+        for data in self.datas:
+            if(data['frequency'] == 125 or data['frequency'] == 250 or data['frequency'] == 500 or \
+            data['frequency'] == 1000 or data['frequency'] == 2000 or data['frequency'] == 4000 or data['frequency'] == 8000):
+                if(data['ear'] == 'right' and data_dict['right'][data['frequency']] == -1):
+                    # print(data['frequency'], data_dict['right'][data['frequency']])
+                    data_dict['right'][data['frequency']] = data['threshold']
+                    data_dict['info']['right_cnt'] += 1
+                elif(data['ear'] == 'left' and data_dict['left'][data['frequency']] == -1):
+                    data_dict['left'][data['frequency']] = data['threshold']
+                    data_dict['info']['left_cnt'] += 1
+        # print(data_dict)    
+        return data_dict
+
 class Digital_Audiogram(QFrame):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.mode_checker = 0
         self.initUI()
         # self.setFixedSize(800, 720)
 
@@ -279,11 +381,6 @@ class Digital_Audiogram(QFrame):
             self.scene.addItem(y_label)
 
         self.side = "right"
-        # self.left_or_right = LorR(self)
-        # self.add_symbol = Add_Symbol(self)
-
-        # self.output_button = QPushButton("Output")
-        # self.output_button.clicked.connect(self.outputButtonClicked)
 
         self.load_in()
 
@@ -296,7 +393,7 @@ class Digital_Audiogram(QFrame):
         self.setLayout(self.layout)
 
     def set_layout(self):
-        if(self.parent.Display_mode == 'checker_mode'):
+        if(self.parent.Display_mode == 'checker_mode' and self.mode_checker != 1):
             self.left_or_right = LorR(self)
             self.add_symbol = Add_Symbol(self)
             
@@ -306,16 +403,26 @@ class Digital_Audiogram(QFrame):
             self.layout.addWidget(self.left_or_right)
             self.layout.addWidget(self.add_symbol)
             self.layout.addWidget(self.output_button)
-        elif(self.parent.Display_mode == 'clinical_mode'):
+
+            if(self.mode_checker == 2):
+                self.layout.removeWidget(self.Information_w)
+                self.Information_w.deleteLater()
+
+            self.mode_checker = 1
+
+        elif(self.parent.Display_mode == 'clinical_mode' and self.mode_checker != 2):
             self.layout.removeWidget(self.left_or_right)
-            self.layout.removeWidget(self.add_symbol)
-            self.layout.removeWidget(self.output_button)
-            
             self.left_or_right.deleteLater()
+            self.layout.removeWidget(self.add_symbol)
             self.add_symbol.deleteLater()
+            self.layout.removeWidget(self.output_button)
             self.output_button.deleteLater()
 
-            self.layout.addWidget(QLabel('Testing for new layout'))
+            self.Information_w = Information(self)
+            self.layout.addWidget(self.Information_w)
+
+            self.mode_checker = 2
+            
 
 
     def load_in(self):
