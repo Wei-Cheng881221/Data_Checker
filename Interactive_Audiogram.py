@@ -240,27 +240,45 @@ class Information(QWidget):
         left_cnt = self.data_get['info']['left_cnt']
 
         for key, value in right_data.items():
-            if(value != -1):
+            if(key == 'add'):
+                continue
+            if(value != -1 and key >= 500 and key <= 4000):
                 right_data['add'] += value
-        right_data['add'] /= right_cnt
+        right_data['add'] /= 4
         right_data['add'] = round(right_data['add'], 2)
 
         for key, value in left_data.items():
-            if(value != -1):
+            if(key == 'add'):
+                continue
+            if(value != -1 and key >= 500 and key <= 4000):
                 left_data['add'] += value
-        left_data['add'] /= left_cnt
+        left_data['add'] /= 4
         left_data['add'] = round(left_data['add'], 2)
 
-        self.label1 = QLabel(f"右耳聽力閥值 : ( {right_data[125]} + {right_data[250]} + {right_data[500]} + \
-{right_data[1000]} + {right_data[2000]} + {right_data[4000]} + {right_data[8000]})/{right_cnt} = {right_data['add']} dB")
+        self.head1 = QLabel('頻率(Hz)   {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}'.format(125, \
+        250, 500, 1000, 2000, 4000, 8000))
+        self.head1.setFont(QFont("Monospace"))
+        self.head2 = QLabel("右耳氣導    {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}".format(right_data[125], \
+        right_data[250], right_data[500], right_data[1000], right_data[2000], right_data[4000], right_data[8000])) 
+        self.head2.setFont(QFont("Monospace"))
+        self.head3 = QLabel('左耳氣導    {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}  {:>4d}\n'.format(left_data[125], \
+        left_data[250], left_data[500], left_data[1000], left_data[2000], left_data[4000], left_data[8000]))
+        self.head3.setFont(QFont("Monospace"))
+
+        layout.addWidget(self.head1)
+        layout.addWidget(self.head2)
+        layout.addWidget(self.head3)
+
+        self.label1 = QLabel(f"右耳聽力閥值 : ( {right_data[500]} + {right_data[1000]} + {right_data[2000]} \
++ {right_data[4000]})/4 = {right_data['add']} dB")
         # self.label2 = QLabel(f'右耳聽力閥值 : ( __ + __  + __ + __ )/4 = __ dB')
-        self.label2 = QLabel(f"左耳聽力閥值 : ( {left_data[125]} + {left_data[250]} + {left_data[500]} + \
-{left_data[1000]} + {left_data[2000]} + {left_data[4000]} + {left_data[8000]})/{left_cnt} = {left_data['add']} dB")
+        self.label2 = QLabel(f"左耳聽力閥值 : ( {left_data[500]} + {left_data[1000]} + {left_data[2000]} \
++ {left_data[4000]})/4 = {left_data['add']} dB\n")
 
         right_data['ratio'] = round((right_data['add'] - 25)*1.5, 2)
         left_data['ratio'] = round((left_data['add'] - 25)*1.5, 2)
-        self.label3 = QLabel(f"右耳聽障比率 : ({right_data['add']}-25)x1.5% = {right_data['ratio']} %")
-        self.label4 = QLabel(f"左耳聽障比率 : ({left_data['add']}-25)x1.5% = {left_data['ratio']} %")
+        self.label3 = QLabel(f"右耳聽障比率 : ({right_data['add']}-25)x1.5% = {right_data['ratio']}%")
+        self.label4 = QLabel(f"左耳聽障比率 : ({left_data['add']}-25)x1.5% = {left_data['ratio']}%")
 
         if(right_data['ratio'] > left_data['ratio']):
             better_ratio = right_data['ratio']
@@ -270,13 +288,27 @@ class Information(QWidget):
             worse_ratio = right_data['ratio']
         
         final_ratio = round((better_ratio*5 + worse_ratio)/6, 2)
-        self.label5 = QLabel(f'(優耳聽障比率 : {better_ratio} %x5 + 劣耳聽障比率 : {worse_ratio} %)/6 = {final_ratio} %')
+        self.label5 = QLabel(f'(優耳聽障比率 : {better_ratio} %x5 + 劣耳聽障比率 : {worse_ratio} %)/6 = {final_ratio}%\n')
+
+        code = "Error"
+        if final_ratio > 90:
+            code = "b230.3 雙耳整體障礙比率大於90.0%"
+        elif final_ratio > 70.1:
+            code = "b230.2 雙耳整體障礙比率介於70.1%至90.0%"
+        elif final_ratio > 45:
+            code = "六歲以上:b230.1 雙耳整體障礙比率介於45.0%至70.0% \n 未滿六歲:b230.1 雙耳整體障礙比率介於22.5%至70.0%"
+        elif final_ratio > 22.5:
+            code= "六歲以上:b230.0 未達下列基準 \n 未滿六歲:b230.1 雙耳整體障礙比率介於22.5%至70.0%"
+        else: 
+            code= "b230.0 未達下列基準"
+        self.label6 = QLabel(f'聽力障礙分類 : \n{code}')
 
         layout.addWidget(self.label1)
         layout.addWidget(self.label2)
         layout.addWidget(self.label3)
         layout.addWidget(self.label4)
         layout.addWidget(self.label5)
+        layout.addWidget(self.label6)
 
         self.setLayout(layout)
 
